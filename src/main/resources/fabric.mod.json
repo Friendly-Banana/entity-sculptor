@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "entity_builder",
+  "version": "${version}",
+  "name": "Entity Builder",
+  "description": "Convert entities into statues",
+  "authors": ["Banana"],
+  "contact": {},
+  "license": "ARR",
+  "icon": "assets/entity_builder/icon.png",
+  "environment": "*",
+  "entrypoints": {"client": ["me.banana.entity_builder.client.EntityBuilderClient"],"main": ["me.banana.entity_builder.EntityBuilder"]},
+  "mixins": [
+    "entity_builder.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.14.9",
+    "fabric": "*",
+    "minecraft": "1.19"
+  }
+}
