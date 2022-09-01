@@ -1,10 +1,9 @@
 package me.banana.entity_builder.client;
 
-import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.FixedColorVertexConsumer;
 import net.minecraft.client.render.LightmapTextureManager;
@@ -20,7 +19,6 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.*;
 
-import java.io.IOException;
 import java.util.*;
 
 import static net.minecraft.server.command.CommandManager.literal;
@@ -31,7 +29,7 @@ public class EntityBuilderClient implements ClientModInitializer {
         return Math.min(a, Math.abs(b));
     }
 
-    private static int execute(ServerCommandSource commandSource, Entity entity, Vec3d statueOrigin) {
+    private static int execute(ServerCommandSource commandSource, Entity entity, Vec3d statueOrigin, boolean noFallingBlocks, boolean noCreativeBlocks) {
         MyVertexConsumer myVertexConsumer = new MyVertexConsumer();
 
         EntityRenderer<? super Entity> renderer = MinecraftClient.getInstance().getEntityRenderDispatcher().getRenderer(entity);
@@ -44,16 +42,10 @@ public class EntityBuilderClient implements ClientModInitializer {
             smallest = AbsMin(smallest, a.position.z);
         }
 
-        try {
-            MinecraftClient.getInstance().getTextureManager().getTexture(renderer.getTexture(entity)).load(MinecraftClient.getInstance().getResourceManager());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         Map<Vec3d, Block> statue = new HashMap<>();
-        for (Vertex a : myVertexConsumer.vertices) {
-            // TODO color match blocks
+        for (Vertex vertex : myVertexConsumer.vertices) {
             // scale positions
-            statue.put(a.position.multiply(1 / smallest), Blocks.ACACIA_LOG);
+            statue.put(vertex.position.multiply(1 / smallest), ColorMatcher.NearestBlock(vertex.color, noFallingBlocks, noCreativeBlocks));
         }
 
         // place blocks
@@ -68,12 +60,18 @@ public class EntityBuilderClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        ColorMatcher.init();
+
         //WorldRenderEvents.AFTER_ENTITIES.register(context -> {context.matrixStack()});
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("build")
                 .then(CommandManager.argument("entity", EntityArgumentType.entity())
-                        .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), context.getSource().getPosition())))
+                        .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), context.getSource().getPosition(), true, true)))
                 .then(CommandManager.argument("pos", Vec3ArgumentType.vec3())
-                        .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"))))
+                        .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), true, true)))
+                .then(CommandManager.argument("noFallingBlocks", BoolArgumentType.bool())
+                        .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), BoolArgumentType.getBool(context, "noFallingBlocks"), true)))
+                .then(CommandManager.argument("noCreativeBlocks", BoolArgumentType.bool())
+                        .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), BoolArgumentType.getBool(context, "fallingBlocks"), BoolArgumentType.getBool(context, "noCreativeBlocks"))))
         ));
     }
 
