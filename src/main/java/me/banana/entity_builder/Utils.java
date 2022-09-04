@@ -21,7 +21,7 @@ public class Utils {
         LOGGER.debug(StackWalker.getInstance().walk(stream -> stream.skip(1).findFirst().get()).getMethodName() + ": " + counter);
     }
 
-    public static void Log(Object... objects) {
+    public static void log(Object... objects) {
         LOGGER.info(Arrays.stream(objects).map(Object::toString).collect(Collectors.joining(", ")));
     }
 

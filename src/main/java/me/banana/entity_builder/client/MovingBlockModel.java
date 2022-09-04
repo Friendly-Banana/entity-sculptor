@@ -9,10 +9,10 @@ import net.minecraft.client.render.entity.model.SinglePartEntityModel;
 
 @Environment(EnvType.CLIENT)
 public class MovingBlockModel extends SinglePartEntityModel<MovingBlockEntity> {
-    private final ModelPart root;
+    private final ModelPart body;
 
     public MovingBlockModel(ModelPart root) {
-        this.root = root.getChild(EntityModelPartNames.ROOT);
+        this.body = root.getChild(EntityModelPartNames.BODY);
     }
 
     public static TexturedModelData getTexturedModelData() {
@@ -28,6 +28,6 @@ public class MovingBlockModel extends SinglePartEntityModel<MovingBlockEntity> {
 
     @Override
     public ModelPart getPart() {
-        return this.root;
+        return this.body;
     }
 }

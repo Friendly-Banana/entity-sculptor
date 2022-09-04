@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "entity_builder",
+  "id": "entity-builder",
   "version": "${version}",
   "name": "Entity Builder",
   "description": "Convert entities into statues",
@@ -14,8 +14,11 @@
     "entity_builder.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.14.9",
+    "fabricloader": ">=${loader_version}",
     "fabric": "*",
-    "minecraft": "1.19"
+    "minecraft": "${minecraft_version}"
+  },
+  "recommends": {
+    "worldedit": ">=${worldedit_version}"
   }
 }
