@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import io.netty.buffer.Unpooled;
 import me.banana.entity_builder.EntityBuilder;
+import me.banana.entity_builder.Utils;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.FixedColorVertexConsumer;
@@ -17,20 +18,23 @@ import net.minecraft.command.argument.Vec3ArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.packet.c2s.play.CustomPayloadC2SPacket;
+import net.minecraft.resource.ResourceManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.LiteralTextContent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec2f;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3f;
+import net.minecraft.util.math.*;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
-import static me.banana.entity_builder.Utils.log;
+import static me.banana.entity_builder.client.EntityBuilderClient.colorMatcher;
 import static net.minecraft.server.command.CommandManager.literal;
 
 public class BuildCommand {
@@ -66,75 +70,60 @@ public class BuildCommand {
         // convert vertices into blocks
         Map<Vec3d, Identifier> statue = new HashMap<>();
         List<Vertex> vertices = myVertexConsumer.getVertices();
-        for (int i = 0; i < vertices.size(); i += 4) {
-            Vertex a = vertices.get(i), b = vertices.get(i + 1), c = vertices.get(i + 2), d = vertices.get(i + 3);
-            List<Vertex> ver = List.of(a, b, c, d);
-            Map<Double, String> F = new HashMap<>();
-            for (int j = 0; j < ver.size(); j++) {
-                for (int g = 0; g < ver.size(); g++) {
-                    if (j != g) {
-                        Vec3d l = ver.get(j).position.relativize(ver.get(g).position);
-                        F.put(l.lengthSquared(), j + " to " + g);
-                    }
-                }
-            }
-            log(F.get(F.keySet().stream().max(Double::compare).get()));
-            Vec3d f = d.position.relativize(b.position);
-            for (int u = 0; u <= 10; u++) {
-                for (int v = 0; v <= 10; v++) {
-                    for (int zv = 0; zv <= 10; zv++) {
-                        float x = u / 10f;
-                        float y = v / 10f;
-                        float z = zv / 10f;
-                        statue.put(new Vec3d(d.position.x + f.x * x, d.position.y + f.y * y, d.position.z + f.z * z).multiply(scale), new Identifier("stone"));
-                    }
-                }
-            }
-        }
-
         /*
+        Function<Object, String> vec3Pr = v -> v.toString().substring(1, v.toString().length() - 1);
+        String s = EntityType.getId(entity.getType()).getPath();
+        try (FileWriter myWriter = new FileWriter(s)) {
+            myWriter.write(vertices.stream().map(v -> vec3Pr.apply(v.position.toString()) + "|" + vec3Pr.apply(v.normal.toString())).collect(Collectors.joining("\n")));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }*/
+        colorMatcher.EnsurePalette();
         ResourceManager resourceManager = MinecraftClient.getInstance().getResourceManager();
         try (InputStream inputStream = resourceManager.getResourceOrThrow(renderer.getTexture(entity)).getInputStream()) {
             BufferedImage image = ImageIO.read(inputStream);
-
-            // interpolate vertices for complete model
-            List<Vertex> vertices = myVertexConsumer.getVertices();
-            for (int i = 0; i < vertices.size(); i += 3) {
-                Vertex a = vertices.get(i), b = vertices.get(i + 1), c = vertices.get(i + 2);
-                Utils.log(a.position, b.position, c.position);
-            }
-
-            Vertex lastVertex = vertices.get(0);
-            for (Vertex vertex : vertices) {
-                int lx = (int) (lastVertex.uv.x * image.getWidth());
-                int x = (int) (vertex.uv.x * image.getWidth());
-                float scaleX = (lastVertex.uv.x - vertex.uv.x) / (lx - x);
-
-                int y = (int) (vertex.uv.y * image.getHeight());
-
-                /*int d = Math.abs(lx - x);
-                for (int u = 0; u < d; u++) {
-                    for (int v = (int) (lastVertex.uv.y * image.getHeight()); v < (int) (vertex.uv.y * image.getHeight()); v++) {
-                        float p = (float)u / d;
-                        lastVertex.uv.multiply(p).add(vertex.uv.multiply(1 - p));
-                        var vertexColor = image.getRGB(u, v);
-                        statue.put(vertex.position.multiply(scaleX), ColorMatcher.NearestBlock(vertexColor, noFallingBlocks, noCreativeBlocks));
+            for (int i = 0; i < vertices.size(); i += 4) {
+                Vertex a = vertices.get(i), b = vertices.get(i + 1), c = vertices.get(i + 2), d = vertices.get(i + 3);
+                List<Vertex> ver = List.of(a, b, c, d);
+                Optional<Vertex> min = ver.stream().min((f, e) -> Float.compare(f.uv.x, e.uv.x) + Float.compare(f.uv.y, e.uv.y));
+                Optional<Vertex> max = ver.stream().max((f, e) -> Float.compare(f.uv.x, e.uv.x) + Float.compare(f.uv.y, e.uv.y));
+                a = min.get();
+                c = max.get();
+                int u1 = (int) (a.uv.x * image.getWidth()), v1 = (int) (a.uv.y * image.getHeight());
+                int u2 = (int) (c.uv.x * image.getWidth()), v2 = (int) (c.uv.y * image.getHeight());
+                for (int u = u1; u <= u2; u++) {
+                    double uProgress = u / (double) (u2 - u1);
+                    Utils.log(u, u2, u1, (double) (u2 - u1));
+                    for (int v = v1; v <= v2; v++) {
+                        double vProgress = v / (double) (v2 - v1);
+                        double x = a.position.x, y = a.position.y, z = a.position.z;
+                        if (a.position.x != c.position.x)
+                            x = MathHelper.lerp(a.position.x, c.position.x, uProgress);
+                        if (a.position.y != c.position.y)
+                            y = MathHelper.lerp(a.position.y, c.position.y, uProgress);
+                        if (a.position.z != c.position.z)
+                            z = MathHelper.lerp(a.position.z, c.position.z, vProgress);
+                        Utils.log(statueOrigin.add(new Vec3d(x, y, z).multiply(scale)));
+                        statue.put(new Vec3d(x, y, z).multiply(scale), colorMatcher.NearestBlock(image.getRGB(u, v), noFallingBlocks, noCreativeBlocks));
                     }
                 }
-                Vertex n = new Vertex();
-                n.position = lastVertex.position.add(vertex.position).multiply(0.5f);
-                n.uv = lastVertex.uv.add(vertex.uv).multiply(0.5f);
-                myVertexConsumer.getVertices().add(n);
-                lastVertex = vertex;* /
-            statue.put(vertex.position.multiply(scaleX * scale), colorMatcher.NearestBlock(image.getRGB(x, y), noFallingBlocks, noCreativeBlocks));
-        }
-        } catch (FileNotFoundException e) {
-                LOGGER.warn("Missing texture for " + renderer.getTexture(entity));
-                return -1;
-                } catch (IOException e) {
-                e.printStackTrace();
             }
-        */
+        } catch (FileNotFoundException e) {
+            Utils.LOGGER.warn("Missing texture for " + renderer.getTexture(entity));
+            return -1;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        /*List<Vertex> ver = List.of(a, b, c, d);
+        Map<Double, String> F = new HashMap<>();
+        for (int j = 0; j < ver.size(); j++) {
+            for (int g = 0; g < ver.size(); g++) {
+                if (j != g) {
+                    Vec3d l = ver.get(j).position.relativize(ver.get(g).position);
+                    F.put(l.lengthSquared(), j + " to " + g);
+                }
+            }
+        }*/
 
         // place blocks
         PacketByteBuf data = new PacketByteBuf(Unpooled.buffer());

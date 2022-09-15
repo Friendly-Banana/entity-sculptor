@@ -4,9 +4,9 @@ import me.banana.entity_builder.Utils;
 import net.fabricmc.fabric.api.resource.ResourceReloadListenerKeys;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
 import net.minecraft.block.FallingBlock;
 import net.minecraft.block.InfestedBlock;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
@@ -30,9 +30,9 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
     final static Predicate<Block> creativeBlock = block -> block.getHardness() == -1.0f || block instanceof InfestedBlock;
     final Map<Color, Identifier> palette = new HashMap<>();
 
-    public Block NearestBlock(int intColor, boolean noFallingBlocks, boolean noCreativeBlocks) {
+    public Identifier NearestBlock(int intColor, boolean noFallingBlocks, boolean noCreativeBlocks) {
         float distance = Float.MAX_VALUE;
-        Block matching = Blocks.SMOOTH_STONE;
+        Identifier matching = new Identifier("stone");//Registry.BLOCK.getDefaultId();
         Color color = new Color(intColor, true);
         for (Color c : palette.keySet()) {
             float d = Math.abs(c.getRed() - color.getRed()) + Math.abs(c.getGreen() - color.getGreen()) + Math.abs(c.getBlue() - color.getBlue()) + Math.abs(c.getAlpha() - color.getAlpha());
@@ -41,10 +41,55 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
                 if (noFallingBlocks && fallingBlock.test(block)) continue;
                 if (noCreativeBlocks && creativeBlock.test(block)) continue;
                 distance = d;
-                matching = block;
+                matching = palette.get(c);
             }
         }
         return matching;
+    }
+
+    public void EnsurePalette() {
+        if (palette.isEmpty())
+            BuildPalette();
+    }
+
+    void BuildPalette() {
+        ResourceManager resourceManager = MinecraftClient.getInstance().getResourceManager();
+        palette.clear();
+        int counter = 0;
+        for (Identifier identifier : Registry.BLOCK.getIds()) {
+            float r = 0, g = 0, b = 0, a = 0;
+            try (InputStream inputStream = resourceManager.getResourceOrThrow(identifier).getInputStream()) {
+                BufferedImage image = ImageIO.read(inputStream);
+                float alphaWeight = 1;
+                for (int y = 0; y < image.getHeight(); y++) {
+                    for (int x = 0; x < image.getWidth(); x++) {
+                        int pixel = image.getRGB(x, y);
+                        Color color = new Color(pixel, true);
+                        a += color.getAlpha();
+                        if (!image.isAlphaPremultiplied()) {
+                            alphaWeight = color.getAlpha() / 255.0f;
+                        }
+                        r += alphaWeight * color.getRed();
+                        g += alphaWeight * color.getGreen();
+                        b += alphaWeight * color.getBlue();
+                    }
+                }
+                // get average
+                int pixels = image.getHeight() * image.getWidth();
+                r /= pixels;
+                g /= pixels;
+                b /= pixels;
+                a /= pixels;
+            } catch (FileNotFoundException e) {
+                //LOGGER.warn("Missing texture for " + identifier);
+                continue;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            palette.put(new Color(r, g, b, a), identifier);
+            counter++;
+        }
+        LOGGER.info("Added " + counter + " block textures.");
     }
 
     @Override
