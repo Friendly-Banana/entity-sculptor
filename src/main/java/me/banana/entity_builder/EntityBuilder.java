@@ -2,6 +2,7 @@ package me.banana.entity_builder;
 
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.LocalSession;
+import com.sk89q.worldedit.MaxChangedBlocksException;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.fabric.FabricAdapter;
@@ -42,16 +43,20 @@ public class EntityBuilder implements ModInitializer {
                 LocalSession localSession = manager.get(actor);
 
                 EditSession editSession = localSession.createEditSession(actor);
-                if (localSession.getBlockChangeLimit() != -1 && statue.size() > localSession.getBlockChangeLimit()) {
+                if (localSession.getBlockChangeLimit() > -1 && statue.size() > localSession.getBlockChangeLimit()) {
                     player.sendMessage(Text.of("Change blockChangeLimit, statue has " + statue.size() + " blocks."));
                     editSession.close();
                     return;
                 }
                 for (BlockPos blockPos : statue.keySet()) {
-                    if (editSession.rawSetBlock(FabricAdapter.adapt(blockPos), FabricAdapter.adapt(statue.get(blockPos).getDefaultState())))
-                        changedBlockCount++;
+                    try {
+                        if (editSession.setBlock(FabricAdapter.adapt(blockPos), FabricAdapter.adapt(statue.get(blockPos).getDefaultState())))
+                            changedBlockCount++;
+                    } catch (MaxChangedBlocksException e) {
+                        player.sendMessage(Text.of("MaxChangedBlocksException: " + e.getMessage()));
+                        break;
+                    }
                 }
-                editSession.commit();
                 editSession.close();
             } else {
                 for (BlockPos blockPos : statue.keySet()) {

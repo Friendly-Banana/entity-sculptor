@@ -70,41 +70,59 @@ public class BuildCommand {
         // convert vertices into blocks
         Map<Vec3d, Identifier> statue = new HashMap<>();
         List<Vertex> vertices = myVertexConsumer.getVertices();
-        /*
-        Function<Object, String> vec3Pr = v -> v.toString().substring(1, v.toString().length() - 1);
+
+        /*Function<Object, String> vec3Pr = v -> v.toString().substring(1, v.toString().length() - 1);
         String s = EntityType.getId(entity.getType()).getPath();
         try (FileWriter myWriter = new FileWriter(s)) {
-            myWriter.write(vertices.stream().map(v -> vec3Pr.apply(v.position.toString()) + "|" + vec3Pr.apply(v.normal.toString())).collect(Collectors.joining("\n")));
+            myWriter.write(vertices.stream().map(v -> vec3Pr.apply(v.position.toString()) + "|" + vec3Pr.apply(v.normal.toString()) + "|" + v.uv.x + ", " + v.uv.y).collect(Collectors.joining("\n")));
         } catch (IOException e) {
             e.printStackTrace();
         }*/
-        colorMatcher.EnsurePalette();
         ResourceManager resourceManager = MinecraftClient.getInstance().getResourceManager();
         try (InputStream inputStream = resourceManager.getResourceOrThrow(renderer.getTexture(entity)).getInputStream()) {
             BufferedImage image = ImageIO.read(inputStream);
             for (int i = 0; i < vertices.size(); i += 4) {
                 Vertex a = vertices.get(i), b = vertices.get(i + 1), c = vertices.get(i + 2), d = vertices.get(i + 3);
                 List<Vertex> ver = List.of(a, b, c, d);
+                /*// remap to 0 - 1
+                List<Vertex> sortedU = ver.stream().sorted((f, e) -> Float.compare(f.uv.x, e.uv.x)).toList();
+                List<Vertex> sortedV = ver.stream().sorted((f, e) -> Float.compare(f.uv.y, e.uv.y)).toList();
+                float minU = sortedU.get(0).uv.x, maxU = sortedU.get(sortedU.size() - 1).uv.x;
+                float minV = sortedV.get(0).uv.y, maxV = sortedV.get(sortedV.size() - 1).uv.y;
+                for (Vertex v : ver) {
+                    v.uv = new Vec2f((v.uv.x - minU) / (maxU - minU), (v.uv.y - minV) / (maxV - minV));
+                }*/
                 Optional<Vertex> min = ver.stream().min((f, e) -> Float.compare(f.uv.x, e.uv.x) + Float.compare(f.uv.y, e.uv.y));
                 Optional<Vertex> max = ver.stream().max((f, e) -> Float.compare(f.uv.x, e.uv.x) + Float.compare(f.uv.y, e.uv.y));
                 a = min.get();
                 c = max.get();
-                int u1 = (int) (a.uv.x * image.getWidth()), v1 = (int) (a.uv.y * image.getHeight());
-                int u2 = (int) (c.uv.x * image.getWidth()), v2 = (int) (c.uv.y * image.getHeight());
+                Direction.Axis unmappedAxis = getUnmappedAxis(a);
+                Utils.log(unmappedAxis);
+                //Utils.log(a.uv.x, a.uv.y, c.uv.x, c.uv.y);
+                int u1 = Math.round(a.uv.x * image.getWidth()), v1 = Math.round(a.uv.y * image.getHeight());
+                int u2 = Math.round(c.uv.x * image.getWidth()), v2 = Math.round(c.uv.y * image.getHeight());
+                Utils.log(u1, u2, v1, v2);
                 for (int u = u1; u <= u2; u++) {
-                    double uProgress = u / (double) (u2 - u1);
-                    Utils.log(u, u2, u1, (double) (u2 - u1));
+                    double uProgress = MathHelper.getLerpProgress((double) u, u1, u2);
                     for (int v = v1; v <= v2; v++) {
-                        double vProgress = v / (double) (v2 - v1);
-                        double x = a.position.x, y = a.position.y, z = a.position.z;
-                        if (a.position.x != c.position.x)
-                            x = MathHelper.lerp(a.position.x, c.position.x, uProgress);
-                        if (a.position.y != c.position.y)
-                            y = MathHelper.lerp(a.position.y, c.position.y, uProgress);
-                        if (a.position.z != c.position.z)
-                            z = MathHelper.lerp(a.position.z, c.position.z, vProgress);
-                        Utils.log(statueOrigin.add(new Vec3d(x, y, z).multiply(scale)));
-                        statue.put(new Vec3d(x, y, z).multiply(scale), colorMatcher.NearestBlock(image.getRGB(u, v), noFallingBlocks, noCreativeBlocks));
+                        double vProgress = MathHelper.getLerpProgress((double) v, v1, v2);
+                        double progress = 0.5;//(uProgress + vProgress) / 2;MathHelper.getLerpProgress(u+v, u1+v1, u2+v2)
+                        double x, y, z;
+                        if (unmappedAxis == Direction.Axis.Y) {
+                            x = MathHelper.clampedLerpFromProgress(u, u1, u2, a.position.x, c.position.x);
+                            z = MathHelper.clampedLerpFromProgress(v, v1, v2, a.position.z, c.position.z);
+                            y = MathHelper.lerp(a.position.y, c.position.y, progress);
+                        } else if (unmappedAxis == Direction.Axis.Z) {
+                            x = MathHelper.clampedLerpFromProgress(u, u1, u2, a.position.x, c.position.x);
+                            y = MathHelper.clampedLerpFromProgress(v, v1, v2, a.position.y, c.position.y);
+                            z = MathHelper.lerp(a.position.z, c.position.z, progress);
+                        } else {
+                            z = MathHelper.clampedLerpFromProgress(u, u1, u2, a.position.z, c.position.z);
+                            y = MathHelper.clampedLerpFromProgress(v, v1, v2, a.position.y, c.position.y);
+                            x = MathHelper.lerp(a.position.x, c.position.x, progress);
+                        }
+                        //Utils.log(u, v, image.getWidth(), image.getHeight());
+                        statue.put(new Vec3d(x, y, z).multiply(scale), colorMatcher.NearestBlock(image.getRGB(u % image.getWidth(), v % image.getHeight()), noFallingBlocks, noCreativeBlocks));
                     }
                 }
             }
@@ -125,6 +143,9 @@ public class BuildCommand {
             }
         }*/
 
+        // edges
+        vertices.forEach(v -> statue.put(v.position.multiply(scale), new Identifier("diamond_block")));
+
         // place blocks
         PacketByteBuf data = new PacketByteBuf(Unpooled.buffer());
         data.writeMap(statue, (buf, v) -> buf.writeBlockPos(new BlockPos(statueOrigin.add(v))), PacketByteBuf::writeIdentifier);
@@ -132,6 +153,26 @@ public class BuildCommand {
 
         commandSource.sendFeedback(MutableText.of(new LiteralTextContent("Building ")).append(entity.getDisplayName()).append("."), false);
         return 1;
+    }
+
+    /**
+     * <table>
+     * <tr> <td> u v </td> <td> side </td> <td> normal </td> <td> unmapped axis </td> </tr>
+     * <tr> <td> x z </td> <td> top  </td> <td> 0 1 0 </td> <td> Direction.Axis.Y </td> </tr>
+     * <tr> <td> x y </td> <td> front </td> <td> 0 0 1 </td> <td> Direction.Axis.Z </td> </tr>
+     * <tr> <td> z y </td> <td> right </td> <td> 1 0 0 </td> <td> Direction.Axis.X </td> </tr>
+     * </table>
+     * u v  side    normal  unmapped axis
+     * x z	top     0 1 0   Direction.Axis.Y
+     * x y	front   0 0 1   Direction.Axis.Z
+     * z y	right   1 0 0   Direction.Axis.X
+     */
+    private static Direction.Axis getUnmappedAxis(Vertex a) {
+        float x = Math.abs(a.normal.getX()), y = Math.abs(a.normal.getY()), z = Math.abs(a.normal.getZ());
+        if (x > y && x > z) return Direction.Axis.Y;
+        else if (y > x && y > z) return Direction.Axis.Z;
+        else if (z > x && z > y) return Direction.Axis.X;
+        return Direction.Axis.Y;
     }
 
     private static class MyVertexConsumer extends FixedColorVertexConsumer implements VertexConsumer {

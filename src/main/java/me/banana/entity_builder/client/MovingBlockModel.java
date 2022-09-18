@@ -18,7 +18,7 @@ public class MovingBlockModel extends SinglePartEntityModel<MovingBlockEntity> {
     public static TexturedModelData getTexturedModelData() {
         ModelData modelData = new ModelData();
         ModelPartData modelPartData = modelData.getRoot();
-        modelPartData.addChild(EntityModelPartNames.BODY, ModelPartBuilder.create().uv(0, 0).cuboid(-9, 8, -8, 18, 16, 16), ModelTransform.NONE);
+        modelPartData.addChild(EntityModelPartNames.BODY, ModelPartBuilder.create().uv(0, 0).cuboid(-8, 8, -8, 16, 16, 16), ModelTransform.NONE);
         return TexturedModelData.of(modelData, 32, 32);
     }
 

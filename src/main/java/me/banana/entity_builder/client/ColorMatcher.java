@@ -6,7 +6,7 @@ import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.block.Block;
 import net.minecraft.block.FallingBlock;
 import net.minecraft.block.InfestedBlock;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.data.client.ModelIds;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
@@ -47,18 +47,23 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
         return matching;
     }
 
-    public void EnsurePalette() {
-        if (palette.isEmpty())
-            BuildPalette();
+    @Override
+    public Identifier getFabricId() {
+        return Utils.NewIdentifier("color_matcher");
     }
 
-    void BuildPalette() {
-        ResourceManager resourceManager = MinecraftClient.getInstance().getResourceManager();
+    @Override
+    public Collection<Identifier> getFabricDependencies() {
+        return Collections.singletonList(ResourceReloadListenerKeys.TEXTURES);
+    }
+
+    @Override
+    public void reload(ResourceManager manager) {
         palette.clear();
         int counter = 0;
-        for (Identifier identifier : Registry.BLOCK.getIds()) {
+        for (Block block : Registry.BLOCK) {
             float r = 0, g = 0, b = 0, a = 0;
-            try (InputStream inputStream = resourceManager.getResourceOrThrow(identifier).getInputStream()) {
+            try (InputStream inputStream = manager.getResourceOrThrow(ModelIds.getBlockModelId(block)).getInputStream()) {
                 BufferedImage image = ImageIO.read(inputStream);
                 float alphaWeight = 1;
                 for (int y = 0; y < image.getHeight(); y++) {
@@ -84,59 +89,10 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
                 //LOGGER.warn("Missing texture for " + identifier);
                 continue;
             } catch (IOException e) {
-                e.printStackTrace();
-            }
-            palette.put(new Color(r, g, b, a), identifier);
-            counter++;
-        }
-        LOGGER.info("Added " + counter + " block textures.");
-    }
-
-    @Override
-    public Identifier getFabricId() {
-        return Utils.NewIdentifier("color_matcher");
-    }
-
-    @Override
-    public Collection<Identifier> getFabricDependencies() {
-        return Collections.singletonList(ResourceReloadListenerKeys.TEXTURES);
-    }
-
-    @Override
-    public void reload(ResourceManager manager) {
-        palette.clear();
-        int counter = 0;
-        for (Identifier identifier : Registry.BLOCK.getIds()) {
-            float r = 0, g = 0, b = 0, a = 0;
-            try (InputStream inputStream = manager.getResourceOrThrow(identifier).getInputStream()) {
-                BufferedImage image = ImageIO.read(inputStream);
-                float alphaWeight = 1;
-                for (int y = 0; y < image.getHeight(); y++) {
-                    for (int x = 0; x < image.getWidth(); x++) {
-                        int pixel = image.getRGB(x, y);
-                        Color color = new Color(pixel, true);
-                        a += color.getAlpha();
-                        if (!image.isAlphaPremultiplied()) {
-                            alphaWeight = color.getAlpha() / 255.0f;
-                        }
-                        r += alphaWeight * color.getRed();
-                        g += alphaWeight * color.getGreen();
-                        b += alphaWeight * color.getBlue();
-                    }
-                }
-                // get average
-                int pixels = image.getHeight() * image.getWidth();
-                r /= pixels;
-                g /= pixels;
-                b /= pixels;
-                a /= pixels;
-            } catch (FileNotFoundException e) {
-                LOGGER.warn("Missing texture for " + identifier);
+                LOGGER.error("Couldn't open texture: " + e);
                 continue;
-            } catch (IOException e) {
-                e.printStackTrace();
             }
-            palette.put(new Color(r, g, b, a), identifier);
+            palette.put(new Color(r, g, b, a), Registry.BLOCK.getId(block));
             counter++;
         }
         LOGGER.info("Added " + counter + " block textures.");
