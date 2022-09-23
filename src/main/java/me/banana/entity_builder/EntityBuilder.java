@@ -8,7 +8,9 @@ import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.fabric.FabricAdapter;
 import com.sk89q.worldedit.session.SessionManager;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.fabricmc.loader.api.FabricLoader;
@@ -30,14 +32,16 @@ import java.util.Map;
 public class EntityBuilder implements ModInitializer {
     public final static EntityType<MovingBlockEntity> MOVING_BLOCK = FabricEntityTypeBuilder.createMob().defaultAttributes(MobEntity::createMobAttributes).entityFactory(MovingBlockEntity::new).dimensions(EntityDimensions.fixed(1f, 1f)).build();
     public static final Identifier BUILD_CHANGES = Utils.NewIdentifier("build_changes");
+    public static final Identifier MOD_INSTALLED = Utils.NewIdentifier("mod_installed");
 
     private static void receiveStatueToBuild(MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler, PacketByteBuf buf, PacketSender responseSender) {
+        SetBlockMode setBlockMode = buf.readEnumConstant(SetBlockMode.class);
         Map<BlockPos, Block> statue = buf.readMap(PacketByteBuf::readBlockPos, buffer -> Registry.BLOCK.get(buffer.readIdentifier()));
 
         // All operations on the server or world must be executed on the server thread
         server.execute(() -> {
             int changedBlockCount = 0;
-            if (FabricLoader.getInstance().isModLoaded("worldedit")) {
+            if (setBlockMode == SetBlockMode.Worldedit && FabricLoader.getInstance().isModLoaded("worldedit")) {
                 Player actor = FabricAdapter.adaptPlayer(player);
                 SessionManager manager = WorldEdit.getInstance().getSessionManager();
                 LocalSession localSession = manager.get(actor);
@@ -72,5 +76,6 @@ public class EntityBuilder implements ModInitializer {
     public void onInitialize() {
         Registry.register(Registry.ENTITY_TYPE, Utils.NewIdentifier("moving_block"), MOVING_BLOCK);
         ServerPlayNetworking.registerGlobalReceiver(BUILD_CHANGES, EntityBuilder::receiveStatueToBuild);
+        ServerPlayConnectionEvents.JOIN.register((networkHandler, sender, server) -> sender.sendPacket(MOD_INSTALLED, PacketByteBufs.empty()));
     }
 }

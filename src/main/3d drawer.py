@@ -47,20 +47,28 @@ def r(s, e, step):
         s += step
     yield e
 
-def m(a,b):
-    return min(a,b),max(a,b)
 
+def m(a, b):
+    return min(a, b), max(a, b)
+
+
+b = "abcd"
+t = dict()
 for i in range(0, len(vertices), 4):
 
-    def line(a, b):
-        ax.plot(*[(a.p[g], b.p[g]) for g in range(3)])
+    def square(a, b, c, d):
+        ax.plot(*[(a.p[g], b.p[g], c.p[g], d.p[g]) for g in range(3)])
 
-    line(vertices[i], vertices[i + 1])
-    line(vertices[i + 1], vertices[i + 2])
-    line(vertices[i + 2], vertices[i + 3])
-    line(vertices[i + 3], vertices[i])
-    for j in range(i, i + 4):
-        ax.text(vertices[j][0] + len(str(j)) * j * 0.01, vertices[j][1], vertices[j][2], str(j))
+    square(*vertices[i : i + 4])
+    for j in range(4):
+        k = tuple(vertices[i + j].p)
+        if k not in t:
+            t[k] = []
+        t[k].append(str(i + j) + b[j])
+
+for k, v in t.items():
+    ax.text(*k, ", ".join(v))
+
     """ch = 0.2
     a, b, c, d = vertices[i : i + 4]
 
