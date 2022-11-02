@@ -30,10 +30,4 @@ public class ModelLoaderMixin {
         unbakedModel.getTextureDependencies(this::getOrLoadModel, set).stream().map(SpriteIdentifier::getTextureId).forEach(texture -> ColorMatcher.ids.put(modelId, texture));
         Utils.log(modelId.toString(), unbakedModel.getTextureDependencies(this::getOrLoadModel, set).stream().map(SpriteIdentifier::getTextureId).map(Identifier::toString));
     }
-
-    @WrapOperation(at = @At(value = "INVOKE", ordinal = 1, target = "java/util/Map.put (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"), method = "addModel")
-    void getModel(ModelIdentifier modelId, UnbakedModel unbakedModel) {
-        unbakedModel.getTextureDependencies(this::getOrLoadModel, set).stream().map(SpriteIdentifier::getTextureId).forEach(texture -> ColorMatcher.ids.put(modelId, texture));
-        Utils.log(modelId.toString(), unbakedModel.getTextureDependencies(this::getOrLoadModel, set).stream().map(SpriteIdentifier::getTextureId).map(Identifier::toString));
-    }
 }
