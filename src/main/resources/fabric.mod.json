@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "id": "entity-builder",
-  "version": "${version}",
+  "id": "entity_builder",
+  "version": "${mod_version}",
   "name": "Entity Builder",
   "description": "Convert entities into statues",
   "authors": ["Banana"],
@@ -9,7 +9,10 @@
   "license": "ARR",
   "icon": "assets/entity_builder/icon.png",
   "environment": "*",
-  "entrypoints": {"client": ["me.banana.entity_builder.client.EntityBuilderClient"],"main": ["me.banana.entity_builder.EntityBuilder"]},
+  "entrypoints": {
+    "prelaunch": ["me.banana.entity_builder.PreLaunch"],"client": ["me.banana.entity_builder.client.EntityBuilderClient"],
+    "main": ["me.banana.entity_builder.EntityBuilder"],"modmenu": ["me.banana.entity_builder.client.EntityBuilderClient"]
+  },
   "mixins": [
     "entity_builder.mixins.json"
   ],
@@ -19,6 +22,8 @@
     "minecraft": "${minecraft_version}"
   },
   "recommends": {
-    "worldedit": ">=${worldedit_version}"
+    "worldedit": ">=${worldedit_version}",
+    "owolib": ">=${owo_version}",
+    "modmenu": ">=${modmenu_version}"
   }
 }

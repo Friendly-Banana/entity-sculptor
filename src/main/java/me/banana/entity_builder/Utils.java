@@ -18,7 +18,7 @@ public class Utils {
 
     public static void Debug() {
         counter++;
-        LOGGER.debug(StackWalker.getInstance().walk(stream -> stream.skip(1).findFirst().get()).getMethodName() + ": " + counter);
+        LOGGER.info(StackWalker.getInstance().walk(stream -> stream.skip(1).findFirst().get()).getMethodName() + ": " + counter);
     }
 
     public static void log(Object... objects) {
@@ -26,10 +26,10 @@ public class Utils {
     }
 
     public static <T> T NotNull(@Nullable T one, T fallback) {
-        return one != null ? one : fallback;
+        return one == null ? fallback : one;
     }
 
-    public static Identifier NewIdentifier(String name) {
+    public static Identifier Id(String name) {
         return new Identifier(MOD_ID, name);
     }
 

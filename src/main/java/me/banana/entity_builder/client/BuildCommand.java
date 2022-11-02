@@ -1,32 +1,30 @@
 package me.banana.entity_builder.client;
 
-import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import me.banana.entity_builder.EntityBuilder;
 import me.banana.entity_builder.Utils;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.FixedColorVertexConsumer;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.entity.EntityRenderer;
-import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.Vec3ArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.resource.ResourceManager;
-import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.LiteralTextContent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.*;
 
 import javax.imageio.ImageIO;
@@ -41,22 +39,10 @@ import static me.banana.entity_builder.client.EntityBuilderClient.COLOR_MATCHER;
 import static net.minecraft.server.command.CommandManager.literal;
 
 public class BuildCommand {
-
     public static void register() {
-        double scale = 1;
-        boolean noFallingBlocks = true, noCreativeBlocks = true;
+        double scale = EntityBuilder.CONFIG.defaultScale();
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("build")
-                .then(CommandManager.argument("entity", EntityArgumentType.entity())
-                        .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), context.getSource().getPosition(), scale, noFallingBlocks, noCreativeBlocks))
-                        .then(CommandManager.argument("pos", Vec3ArgumentType.vec3())
-                                .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), scale, noFallingBlocks, noCreativeBlocks))
-                                .then(CommandManager.argument("scale", DoubleArgumentType.doubleArg())
-                                        .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), DoubleArgumentType.getDouble(context, "scale"), noFallingBlocks, noCreativeBlocks))
-                                        .then(CommandManager.argument("noFallingBlocks", BoolArgumentType.bool())
-                                                .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), DoubleArgumentType.getDouble(context, "scale"), BoolArgumentType.getBool(context, "noFallingBlocks"), noCreativeBlocks))
-                                                .then(CommandManager.argument("noCreativeBlocks", BoolArgumentType.bool())
-                                                        .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), DoubleArgumentType.getDouble(context, "scale"), BoolArgumentType.getBool(context, "fallingBlocks"), BoolArgumentType.getBool(context, "noCreativeBlocks")))
-                                                )))))
+                .then(CommandManager.argument("entity", EntityArgumentType.entity()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), context.getSource().getPosition(), scale)).then(CommandManager.argument("pos", Vec3ArgumentType.vec3()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), scale)).then(CommandManager.argument("scale", DoubleArgumentType.doubleArg()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), DoubleArgumentType.getDouble(context, "scale"))))))
         ));
     }
 
@@ -74,7 +60,7 @@ public class BuildCommand {
         //return vertices[0].position.multiply((1 - p1) * (1 - p2)).add(vertices[1].position.multiply(p1 * (1 - p2))).add(vertices[2].position.multiply((1 - p1) * p2)).add(vertices[3].position.multiply(p1 * p2));
     }
 
-    public static int execute(ServerCommandSource commandSource, Entity entity, Vec3d statueOrigin, double scale, boolean noFallingBlocks, boolean noCreativeBlocks) {
+    public static int execute(ServerCommandSource commandSource, Entity entity, Vec3d statueOrigin, double scale) {
         Map<RenderLayer, MyVertexConsumer> l = new HashMap<>();
 
         MyVertexConsumer myVertexConsumer = new MyVertexConsumer();
@@ -85,8 +71,8 @@ public class BuildCommand {
         }
         renderer.render(entity, entity.prevYaw, 0, new MatrixStack(), layer -> myVertexConsumer, LightmapTextureManager.MAX_LIGHT_COORDINATE);
 
-        // convert vertices into blocks
-        Map<Vec3d, Identifier> statue = new HashMap<>();
+        // convert vertices into blocksMap
+        Map<Vec3d, BlockState> statue = new HashMap<>();
         List<Vertex> vertices = myVertexConsumer.getVertices();
 
         /*Function<Object, String> vec3Pr = v -> v.toString().substring(1, v.toString().length() - 1);
@@ -144,7 +130,7 @@ public class BuildCommand {
                                 x = MathHelper.clampedLerpFromProgress(u + v, u1 + v1, u2 + v2, minUV.position.x, maxUV.position.x);
                             }
                         }//lerp(u, u1, u2, v, v1, v2, ver)
-                        statue.put(new Vec3d(x, y, z).multiply(uvScale * scale), COLOR_MATCHER.NearestBlock(image.getRGB(u % image.getWidth(), v % image.getHeight()), noFallingBlocks, noCreativeBlocks));
+                        statue.put(new Vec3d(x, y, z).multiply(uvScale * scale), COLOR_MATCHER.NearestBlock(image.getRGB(u % image.getWidth(), v % image.getHeight()), unmappedAxis));
                     }
                 }
             }
@@ -158,14 +144,14 @@ public class BuildCommand {
         // TODO config option: show vertices
         //vertices.forEach(v -> statue.put(v.position.multiply(scale), new Identifier("diamond_block")));
 
-        // place blocks
+        // place blocksMap
         PacketByteBuf data = PacketByteBufs.create();
         data.writeEnumConstant(EntityBuilderClient.setBlockMode);
-        data.writeMap(statue, (buf, v) -> buf.writeBlockPos(new BlockPos(statueOrigin.add(v))), PacketByteBuf::writeIdentifier);
+        data.writeMap(statue, (buf, vec3d) -> buf.writeBlockPos(new BlockPos(statueOrigin.add(vec3d))), (buf, state) -> buf.writeRegistryValue(Block.STATE_IDS, state));
         switch (EntityBuilderClient.setBlockMode) {
             case SetBlock -> {
             }
-            case CustomPacket, Worldedit -> ClientPlayNetworking.send(EntityBuilder.BUILD_CHANGES, data);
+            case CustomPacket, WorldEdit -> ClientPlayNetworking.send(EntityBuilder.BUILD_CHANGES, data);
         }
 
         commandSource.sendFeedback(MutableText.of(new LiteralTextContent("Building ")).append(entity.getDisplayName()).append("."), false);

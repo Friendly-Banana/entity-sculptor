@@ -6,6 +6,7 @@
   "mixins": [
   ],
   "client": [
+    "BlockTextureIds","ModelLoaderMixin"
   ],
   "injectors": {
     "defaultRequire": 1

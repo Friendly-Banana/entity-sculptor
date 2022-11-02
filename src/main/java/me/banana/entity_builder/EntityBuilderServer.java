@@ -7,50 +7,27 @@ import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.fabric.FabricAdapter;
 import com.sk89q.worldedit.session.SessionManager;
-import me.banana.entity_builder.client.EBConfig;
-import net.fabricmc.api.ModInitializer;
+import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.FallingBlock;
-import net.minecraft.block.InfestedBlock;
-import net.minecraft.entity.EntityDimensions;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
 
-import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 
-public class EntityBuilder implements ModInitializer {
-    public final static EntityType<MovingBlockEntity> MOVING_BLOCK = FabricEntityTypeBuilder.createMob().defaultAttributes(MobEntity::createMobAttributes).entityFactory(MovingBlockEntity::new).dimensions(EntityDimensions.fixed(1f, 1f)).build();
-    public static final Identifier BUILD_CHANGES = Utils.Id("build_changes");
-    public static final Identifier MOD_INSTALLED = Utils.Id("mod_installed");
+import static me.banana.entity_builder.EntityBuilder.BUILD_CHANGES;
+import static me.banana.entity_builder.EntityBuilder.MOD_INSTALLED;
 
-    public static final EBConfig CONFIG = EBConfig.createAndLoad();
-    public static final Predicate<Block> SOLID_BLOCK = block -> block.getDefaultState().getMaterial().isSolid();
-    public static final Predicate<Block> FALLING_BLOCK = block -> block instanceof FallingBlock;
-    public static final Predicate<Block> CREATIVE_BLOCK = block -> block.getHardness() == -1.0f || block instanceof InfestedBlock;
-
-    static {
-        CONFIG.subscribeToCreativeBlocks(exclude -> filterBlocks(exclude, CREATIVE_BLOCK));
-        CONFIG.subscribeToFallingBlocks(exclude -> filterBlocks(exclude, FALLING_BLOCK));
-        CONFIG.subscribeToSolidBlocks(exclude -> filterBlocks(exclude, SOLID_BLOCK));
-    }
-
+public class EntityBuilderServer implements DedicatedServerModInitializer {
     private static void receiveStatueToBuild(MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler, PacketByteBuf buf, PacketSender responseSender) {
         SetBlockMode setBlockMode = buf.readEnumConstant(SetBlockMode.class);
         Map<BlockPos, BlockState> statue = buf.readMap(PacketByteBuf::readBlockPos, buffer -> buffer.readRegistryValue(Block.STATE_IDS));
@@ -90,20 +67,9 @@ public class EntityBuilder implements ModInitializer {
         });
     }
 
-    private static void filterBlocks(boolean exclude, Predicate<Block> in) {
-        List<Block> excludedBlocks = CONFIG.excludedBlocks();
-        if (exclude) {
-            Registry.BLOCK.stream().filter(b -> in.test(b) && !excludedBlocks.contains(b)).forEach(excludedBlocks::add);
-        } else {
-            Registry.BLOCK.stream().filter(in).forEach(excludedBlocks::remove);
-        }
-        CONFIG.excludedBlocks(excludedBlocks);
-    }
-
     @Override
-    public void onInitialize() {
-        Registry.register(Registry.ENTITY_TYPE, Utils.Id("moving_block"), MOVING_BLOCK);
-        ServerPlayNetworking.registerGlobalReceiver(BUILD_CHANGES, EntityBuilder::receiveStatueToBuild);
+    public void onInitializeServer() {
+        ServerPlayNetworking.registerGlobalReceiver(BUILD_CHANGES, EntityBuilderServer::receiveStatueToBuild);
         ServerPlayConnectionEvents.JOIN.register((networkHandler, sender, server) -> sender.sendPacket(MOD_INSTALLED, PacketByteBufs.empty()));
     }
 }
