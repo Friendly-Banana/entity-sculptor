@@ -85,7 +85,7 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
                 b /= pixels;
                 a /= pixels;
             } catch (FileNotFoundException e) {
-                LOGGER.warn("Missing texture for " + textureId);
+                //LOGGER.warn("Missing texture for " + textureId);
                 continue;
             } catch (IOException e) {
                 LOGGER.error("Couldn't open texture: " + e);

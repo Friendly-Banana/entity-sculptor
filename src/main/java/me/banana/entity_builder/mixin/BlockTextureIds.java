@@ -5,6 +5,8 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import me.banana.entity_builder.Utils;
 import me.banana.entity_builder.client.ColorMatcher;
 import net.minecraft.client.texture.SpriteAtlasTexture;
+import net.minecraft.resource.Resource;
+import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -32,17 +34,20 @@ public class BlockTextureIds {
         return set;
     }
 
+    /**
+     * same as {@link BlockTextureIds#loadSprite(ResourceManager, Identifier, Operation)} but with non-texture identifiers: `minecraft:mob_effect/levitation` vs `minecraft:textures/entity/banner_base.png`
+     */
     @WrapOperation(at = @At(value = "INVOKE", target = "Lnet/minecraft/resource/Resource;getInputStream()Ljava/io/InputStream;"), method = "method_18160")
-    private InputStream loadSprites(SpriteAtlasTexture instance, Identifier identifier, Operation<InputStream> original) {
-        InputStream inputStream = original.call(identifier);
-        Utils.log("xxxyyxys ", identifier);
+    private InputStream loadSprites(Resource instance, Operation<InputStream> original, Identifier identifier) {
+        InputStream inputStream = original.call(instance);
+        Utils.log("xxxyyxys", identifier);
         return inputStream;
     }
 
     @WrapOperation(at = @At(value = "INVOKE", target = "Lnet/minecraft/resource/ResourceManager;open(Lnet/minecraft/util/Identifier;)Ljava/io/InputStream;"), method = "loadSprite")
-    private InputStream loadSprite(SpriteAtlasTexture instance, Identifier identifier, Operation<InputStream> original) {
-        InputStream inputStream = original.call(identifier);
-        Utils.log("zxzyzxzy ", identifier);
+    private InputStream loadSprite(ResourceManager instance, Identifier identifier, Operation<InputStream> original) {
+        InputStream inputStream = original.call(instance, identifier);
+        Utils.log("zxzyzxzy", identifier);
         return inputStream;
     }
 }
