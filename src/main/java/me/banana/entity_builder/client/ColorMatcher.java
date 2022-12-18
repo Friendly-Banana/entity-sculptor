@@ -37,7 +37,7 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
             float d = Math.abs(c.getRed() - color.getRed()) + Math.abs(c.getGreen() - color.getGreen()) + Math.abs(c.getBlue() - color.getBlue()) + Math.abs(c.getAlpha() - color.getAlpha());
             if (d < distance) {
                 Block block = palette.get(c).getBlock();
-                if (EntityBuilder.CONFIG.excludedBlock().contains(Registry.BLOCK.getId(block).toString())) continue;
+                if (EntityBuilder.CONFIG.excludedBlockIDs().contains(Registry.BLOCK.getId(block).toString())) continue;
                 distance = d;
                 matching = palette.get(c);
             }

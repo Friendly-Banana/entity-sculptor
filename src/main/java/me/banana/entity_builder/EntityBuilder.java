@@ -52,13 +52,13 @@ public class EntityBuilder implements ModInitializer {
     }
 
     private static void filterBlocks(boolean exclude, Predicate<Block> blockPredicate) {
-        List<String> excludedBlocks = CONFIG.excludedBlock();
+        List<String> excludedBlocks = CONFIG.excludedBlockIDs();
         if (exclude) {
             Registry.BLOCK.getIds().stream().filter(id -> blockPredicate.test(Registry.BLOCK.get(id))).map(Identifier::toString).filter(id -> !excludedBlocks.contains(id)).forEach(excludedBlocks::add);
         } else {
             Registry.BLOCK.getIds().stream().filter(id -> blockPredicate.test(Registry.BLOCK.get(id))).map(Identifier::toString).forEach(excludedBlocks::remove);
         }
-        CONFIG.excludedBlock(excludedBlocks);
+        CONFIG.excludedBlockIDs(excludedBlocks);
     }
 
     private static void receiveStatueToBuild(MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler, PacketByteBuf buf, PacketSender responseSender) {

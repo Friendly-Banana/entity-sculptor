@@ -34,9 +34,6 @@ dependencies {
     // OwoLib
     annotationProcessor(modImplementation("io.wispforest:owo-lib:${project.owo_version}"))
 
-    // ModMenu
-    modImplementation("com.terraformersmc:modmenu:${project.modmenu_version}")
-
     include(implementation("com.github.LlamaLad7:MixinExtras:${project.mixinextras_version}"))
     annotationProcessor("com.github.LlamaLad7:MixinExtras:${project.mixinextras_version}")
 }
