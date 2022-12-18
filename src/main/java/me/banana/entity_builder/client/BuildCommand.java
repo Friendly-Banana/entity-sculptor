@@ -130,7 +130,7 @@ public class BuildCommand {
                                 x = MathHelper.clampedLerpFromProgress(u + v, u1 + v1, u2 + v2, minUV.position.x, maxUV.position.x);
                             }
                         }//lerp(u, u1, u2, v, v1, v2, ver)
-                        statue.put(new Vec3d(x, y, z).multiply(uvScale * scale), COLOR_MATCHER.NearestBlock(image.getRGB(u % image.getWidth(), v % image.getHeight()), unmappedAxis));
+                        statue.put(new Vec3d(x, y, z).multiply(uvScale * scale), COLOR_MATCHER.nearestBlock(image.getRGB(u % image.getWidth(), v % image.getHeight()), unmappedAxis));
                     }
                 }
             }

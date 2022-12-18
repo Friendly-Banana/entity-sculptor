@@ -10,8 +10,11 @@
   "icon": "assets/entity_builder/icon.png",
   "environment": "*",
   "entrypoints": {
-    "preLaunch": ["me.banana.entity_builder.PreLaunch"],"client": ["me.banana.entity_builder.client.EntityBuilderClient"],
-    "main": ["me.banana.entity_builder.EntityBuilder"],"modmenu": ["me.banana.entity_builder.client.EntityBuilderClient"]
+    "preLaunch": ["me.banana.entity_builder.PreLaunch"],
+    "main": ["me.banana.entity_builder.EntityBuilder"],
+    "client": ["me.banana.entity_builder.client.EntityBuilderClient"],
+    "modmenu": ["me.banana.entity_builder.client.EntityBuilderClient"],
+    "server": ["me.banana.entity_builder.EntityBuilderServer"]
   },
   "mixins": [
     "entity_builder.mixins.json"

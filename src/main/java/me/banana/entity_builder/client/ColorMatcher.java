@@ -29,7 +29,7 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
     private final Map<Color, BlockState> palette = new HashMap<>();
 
     // TODO use axis
-    public BlockState NearestBlock(int intColor, Direction unmappedAxis) {
+    public BlockState nearestBlock(int intColor, Direction unmappedAxis) {
         float distance = Float.MAX_VALUE;
         BlockState matching = Registry.BLOCK.get(new Identifier("bedrock")).getDefaultState();
         Color color = new Color(intColor, true);
@@ -37,7 +37,7 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
             float d = Math.abs(c.getRed() - color.getRed()) + Math.abs(c.getGreen() - color.getGreen()) + Math.abs(c.getBlue() - color.getBlue()) + Math.abs(c.getAlpha() - color.getAlpha());
             if (d < distance) {
                 Block block = palette.get(c).getBlock();
-                if (EntityBuilder.CONFIG.excludedBlocks().contains(block)) continue;
+                if (EntityBuilder.CONFIG.excludedBlock().contains(Registry.BLOCK.getId(block).toString())) continue;
                 distance = d;
                 matching = palette.get(c);
             }
@@ -92,7 +92,6 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
                 continue;
             }
             palette.put(new Color((int) r, (int) g, (int) b, (int) a), Registry.BLOCK.get(blockId).getDefaultState());
-            if (Registry.BLOCK.get(blockId).getDefaultState().isAir()) Utils.log("fdsasf");
             counter++;
         }
         LOGGER.info("Added " + counter + " block textures.");

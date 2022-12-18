@@ -51,6 +51,16 @@ public class EntityBuilder implements ModInitializer {
         CONFIG.subscribeToSolidBlocks(exclude -> filterBlocks(exclude, SOLID_BLOCK));
     }
 
+    private static void filterBlocks(boolean exclude, Predicate<Block> blockPredicate) {
+        List<String> excludedBlocks = CONFIG.excludedBlock();
+        if (exclude) {
+            Registry.BLOCK.getIds().stream().filter(id -> blockPredicate.test(Registry.BLOCK.get(id))).map(Identifier::toString).filter(id -> !excludedBlocks.contains(id)).forEach(excludedBlocks::add);
+        } else {
+            Registry.BLOCK.getIds().stream().filter(id -> blockPredicate.test(Registry.BLOCK.get(id))).map(Identifier::toString).forEach(excludedBlocks::remove);
+        }
+        CONFIG.excludedBlock(excludedBlocks);
+    }
+
     private static void receiveStatueToBuild(MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler, PacketByteBuf buf, PacketSender responseSender) {
         SetBlockMode setBlockMode = buf.readEnumConstant(SetBlockMode.class);
         Map<BlockPos, BlockState> statue = buf.readMap(PacketByteBuf::readBlockPos, buffer -> buffer.readRegistryValue(Block.STATE_IDS));
@@ -65,7 +75,7 @@ public class EntityBuilder implements ModInitializer {
 
                 EditSession editSession = localSession.createEditSession(actor);
                 if (localSession.getBlockChangeLimit() > -1 && statue.size() > localSession.getBlockChangeLimit()) {
-                    player.sendMessage(Text.of("Change blockChangeLimit, statue has " + statue.size() + " blocksMap."));
+                    player.sendMessage(Text.of("Change blockChangeLimit, statue has " + statue.size() + " blocks."));
                     editSession.close();
                     return;
                 }
@@ -88,16 +98,6 @@ public class EntityBuilder implements ModInitializer {
             }
             player.sendMessage(Text.of("Built statue, changed " + changedBlockCount + " blocks."));
         });
-    }
-
-    private static void filterBlocks(boolean exclude, Predicate<Block> in) {
-        List<Block> excludedBlocks = CONFIG.excludedBlocks();
-        if (exclude) {
-            Registry.BLOCK.stream().filter(b -> in.test(b) && !excludedBlocks.contains(b)).forEach(excludedBlocks::add);
-        } else {
-            Registry.BLOCK.stream().filter(in).forEach(excludedBlocks::remove);
-        }
-        CONFIG.excludedBlocks(excludedBlocks);
     }
 
     @Override

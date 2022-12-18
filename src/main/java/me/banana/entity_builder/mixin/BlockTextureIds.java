@@ -30,24 +30,30 @@ public class BlockTextureIds {
         Optional<Identifier> a = set.stream().findFirst();
         if (a.isPresent() && a.get().getPath().startsWith("block")) {
             ColorMatcher.oldIds = set.stream().map(this::getTexturePath).toList();
+            Utils.log(a.get());
         }
         return set;
     }
 
     /**
-     * same as {@link BlockTextureIds#loadSprite(ResourceManager, Identifier, Operation)} but with non-texture identifiers: `minecraft:mob_effect/levitation` vs `minecraft:textures/entity/banner_base.png`
+     * same as {@link BlockTextureIds#loadSprite(ResourceManager, Identifier, Operation)} but with non-texture identifiers: `minecraft:mob_effect/levitation`
      */
     @WrapOperation(at = @At(value = "INVOKE", target = "Lnet/minecraft/resource/Resource;getInputStream()Ljava/io/InputStream;"), method = "method_18160")
     private InputStream loadSprites(Resource instance, Operation<InputStream> original, Identifier identifier) {
         InputStream inputStream = original.call(instance);
-        Utils.log("xxxyyxys", identifier);
+        if (identifier.getPath().startsWith("block")) {
+            //Utils.log(identifier);
+        }
         return inputStream;
     }
 
+    /**
+     * minecraft:textures/block/bamboo_singleleaf.png
+     */
     @WrapOperation(at = @At(value = "INVOKE", target = "Lnet/minecraft/resource/ResourceManager;open(Lnet/minecraft/util/Identifier;)Ljava/io/InputStream;"), method = "loadSprite")
     private InputStream loadSprite(ResourceManager instance, Identifier identifier, Operation<InputStream> original) {
         InputStream inputStream = original.call(instance, identifier);
-        Utils.log("zxzyzxzy", identifier);
+        //Utils.log("zxzyzxzy", identifier);
         return inputStream;
     }
 }
