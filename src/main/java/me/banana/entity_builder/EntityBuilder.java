@@ -48,7 +48,7 @@ public class EntityBuilder implements ModInitializer {
     static {
         CONFIG.subscribeToCreativeBlocks(exclude -> filterBlocks(exclude, CREATIVE_BLOCK));
         CONFIG.subscribeToFallingBlocks(exclude -> filterBlocks(exclude, FALLING_BLOCK));
-        CONFIG.subscribeToSolidBlocks(exclude -> filterBlocks(exclude, SOLID_BLOCK));
+        CONFIG.subscribeToNonSolidBlocks(exclude -> filterBlocks(exclude, SOLID_BLOCK.negate()));
     }
 
     private static void filterBlocks(boolean exclude, Predicate<Block> blockPredicate) {
@@ -95,6 +95,7 @@ public class EntityBuilder implements ModInitializer {
                     player.getWorld().setBlockState(blockPos, statue.get(blockPos));
                     changedBlockCount++;
                 }
+                player.sendMessage(Text.of(statue.keySet().toArray()[0].toString()));
             }
             player.sendMessage(Text.of("Built statue, changed " + changedBlockCount + " blocks."));
         });

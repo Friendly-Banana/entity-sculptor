@@ -1,14 +1,12 @@
 {
   "text.config.entity_builder.title": [{"text": "Entity Builder Options","color": "#0096FF"}],
-  "text.config.entity_builder.option.setBlockMode": "How to change the blocks on the server",
-  "text.config.entity_builder.option.setBlockMode.value.setblock": "Use /setblock",
-  "text.config.entity_builder.option.setBlockMode.value.setblock.tooltip": "Probably laggy, but works on vanilla servers",
+  "text.config.entity_builder.option.setBlockMode": "How to send the changed blocks to the server",
   "text.config.entity_builder.option.setBlockMode.value.custompacket": "Send custom packet",
   "text.config.entity_builder.option.setBlockMode.value.custompacket.tooltip": "Requires this mod on the server",
   "text.config.entity_builder.option.setBlockMode.value.worldedit": "Use WorldEdit",
   "text.config.entity_builder.option.setBlockMode.value.worldedit.tooltip": "Can be undone\nRequires this mod and WorldEdit on the server",
   "text.config.entity_builder.option.defaultScale": "Default scale for statues",
-  "text.config.entity_builder.option.solidBlocks": "Exclude non solid blocks",
+  "text.config.entity_builder.option.nonSolidBlocks": "Exclude non solid blocks",
   "text.config.entity_builder.option.creativeBlocks": "Exclude creative blocks",
   "text.config.entity_builder.option.fallingBlocks": "Exclude falling blocks",
   "text.config.entity_builder.option.excludedBlocks": "Excluded blocks"

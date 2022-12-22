@@ -2,7 +2,6 @@ package me.banana.entity_builder.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import me.banana.entity_builder.Utils;
 import me.banana.entity_builder.client.ColorMatcher;
 import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.resource.Resource;
@@ -16,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import java.io.InputStream;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Mixin(SpriteAtlasTexture.class)
 public class BlockTextureIds {
@@ -29,8 +29,9 @@ public class BlockTextureIds {
         // block atlas
         Optional<Identifier> a = set.stream().findFirst();
         if (a.isPresent() && a.get().getPath().startsWith("block")) {
-            ColorMatcher.oldIds = set.stream().map(this::getTexturePath).toList();
-            Utils.log(a.get());
+            //ColorMatcher.oldIds = set.stream().map(this::getTexturePath).toList();
+            ColorMatcher.ids = set.stream().filter(id -> id.getPath().startsWith("block")).collect(Collectors.toMap(e -> e, this::getTexturePath));
+            //Utils.log("gfhtj",  ColorMatcher.ids);
         }
         return set;
     }
@@ -42,7 +43,7 @@ public class BlockTextureIds {
     private InputStream loadSprites(Resource instance, Operation<InputStream> original, Identifier identifier) {
         InputStream inputStream = original.call(instance);
         if (identifier.getPath().startsWith("block")) {
-            //Utils.log(identifier);
+            //Utils.log("asfsz456z", identifier);
         }
         return inputStream;
     }
@@ -53,7 +54,9 @@ public class BlockTextureIds {
     @WrapOperation(at = @At(value = "INVOKE", target = "Lnet/minecraft/resource/ResourceManager;open(Lnet/minecraft/util/Identifier;)Ljava/io/InputStream;"), method = "loadSprite")
     private InputStream loadSprite(ResourceManager instance, Identifier identifier, Operation<InputStream> original) {
         InputStream inputStream = original.call(instance, identifier);
-        //Utils.log("zxzyzxzy", identifier);
+        if (identifier.getPath().startsWith("block")) {
+            //Utils.log("sdfsadf", identifier);
+        }
         return inputStream;
     }
 }

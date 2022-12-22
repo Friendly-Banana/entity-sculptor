@@ -12,9 +12,7 @@
   "entrypoints": {
     "preLaunch": ["me.banana.entity_builder.PreLaunch"],
     "main": ["me.banana.entity_builder.EntityBuilder"],
-    "client": ["me.banana.entity_builder.client.EntityBuilderClient"],
-    "modmenu": ["me.banana.entity_builder.client.EntityBuilderClient"],
-    "server": ["me.banana.entity_builder.EntityBuilderServer"]
+    "client": ["me.banana.entity_builder.client.EntityBuilderClient"]
   },
   "mixins": [
     "entity_builder.mixins.json"

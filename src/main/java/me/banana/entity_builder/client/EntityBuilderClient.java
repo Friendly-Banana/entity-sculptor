@@ -1,7 +1,6 @@
 package me.banana.entity_builder.client;
 
 import me.banana.entity_builder.EntityBuilder;
-import me.banana.entity_builder.SetBlockMode;
 import me.banana.entity_builder.Utils;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -18,16 +17,14 @@ public class EntityBuilderClient implements ClientModInitializer {
     public static final ColorMatcher COLOR_MATCHER = new ColorMatcher();
     public static final EntityModelLayer MOVING_BLOCK_LAYER = new EntityModelLayer(Utils.Id("moving_block"), "main");
     public static boolean installedOnServer = false;
-    public static SetBlockMode setBlockMode = SetBlockMode.SetBlock;
 
     @Override
     public void onInitializeClient() {
-        ClientPlayNetworking.registerGlobalReceiver(EntityBuilder.MOD_INSTALLED, (client, handler, buf, responseSender) -> {
-            installedOnServer = true;
-            setBlockMode = SetBlockMode.CustomPacket;
-        });
+        ClientPlayNetworking.registerGlobalReceiver(EntityBuilder.MOD_INSTALLED, (client, handler, buf, responseSender) -> installedOnServer = true);
         ClientPlayConnectionEvents.JOIN.register((networkHandler, sender, client) -> installedOnServer = false);
+
         BuildCommand.register();
+
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(COLOR_MATCHER);
 
         EntityModelLayerRegistry.registerModelLayer(MOVING_BLOCK_LAYER, MovingBlockModel::getTexturedModelData);

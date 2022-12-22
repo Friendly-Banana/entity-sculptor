@@ -4,7 +4,6 @@ import com.google.common.collect.Sets;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.datafixers.util.Pair;
-import me.banana.entity_builder.Utils;
 import me.banana.entity_builder.client.ColorMatcher;
 import net.minecraft.client.render.model.ModelLoader;
 import net.minecraft.client.render.model.UnbakedModel;
@@ -17,7 +16,6 @@ import org.spongepowered.asm.mixin.injection.At;
 
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Mixin(ModelLoader.class)
 public class ModelLoaderMixin {
@@ -38,7 +36,7 @@ public class ModelLoaderMixin {
         ModelIdentifier modelId = (ModelIdentifier) oModelId;
         UnbakedModel unbakedModel = (UnbakedModel) oUnbakedModel;
         unbakedModel.getTextureDependencies(this::getOrLoadModel, set).stream().map(SpriteIdentifier::getTextureId).forEach(texture -> ColorMatcher.ids.put(modelId, texture));
-        Utils.log(modelId.toString(), unbakedModel.getTextureDependencies(this::getOrLoadModel, set).stream().map(SpriteIdentifier::getTextureId).map(Identifier::toString).collect(Collectors.joining(", ")));
+        //Utils.log(modelId.toString(), unbakedModel.getTextureDependencies(this::getOrLoadModel, set).stream().map(SpriteIdentifier::getTextureId).map(Identifier::toString).collect(Collectors.joining(", ")));
         return original.call(instance, oModelId, oUnbakedModel);
     }
 }
