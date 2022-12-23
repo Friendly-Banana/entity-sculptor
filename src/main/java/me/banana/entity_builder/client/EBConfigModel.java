@@ -14,23 +14,26 @@ import java.util.List;
 @Config(name = Utils.MOD_ID, wrapperName = "EBConfig")
 public class EBConfigModel {
     public double defaultScale = 1;
-    public boolean showVertices;
     public SetBlockMode setBlockMode = SetBlockMode.CustomPacket;
 
+    public boolean skipWaterlogged = true;
     @Hook
     public boolean nonSolidBlocks;
     @Hook
     public boolean fallingBlocks;
     @Hook
     public boolean creativeBlocks;
-    @Expanded
-    @PredicateConstraint("validBlockID")
+    @PredicateConstraint("validBlockIDs")
     public List<String> excludedBlockIDs = new ArrayList<>();
 
-    boolean validBlockID(String id) {
+    @SectionHeader("debug")
+    public boolean showOrigin;
+    public boolean showVertices;
+
+    public static boolean validBlockIDs(List<String> ids) {
         try {
-            return Registry.BLOCK.containsId(new Identifier(id));
-        } catch (InvalidIdentifierException ignored) {
+            return ids.stream().allMatch(id -> Registry.BLOCK.containsId(new Identifier(id)));
+        } catch (InvalidIdentifierException exception) {
             return false;
         }
     }

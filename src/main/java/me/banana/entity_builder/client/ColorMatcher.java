@@ -1,59 +1,40 @@
 package me.banana.entity_builder.client;
 
-import com.google.common.collect.Maps;
 import me.banana.entity_builder.EntityBuilder;
 import me.banana.entity_builder.Utils;
 import net.fabricmc.fabric.api.resource.ResourceReloadListenerKeys;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.CarrotsBlock;
-import net.minecraft.block.FireBlock;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.block.BlockRenderManager;
+import net.minecraft.client.render.model.BakedQuad;
+import net.minecraft.client.texture.NativeImage;
 import net.minecraft.resource.ResourceManager;
+import net.minecraft.state.property.Properties;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.random.Random;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.world.BlockRenderView;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
 import java.util.*;
 
-import static me.banana.entity_builder.Utils.LOGGER;
-
 public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
-    public static Map<Identifier, Identifier> ids = Maps.newHashMap();
+    private final Map<Direction, HashMap<BlockState, RGBA>> palette = new HashMap<>();
 
-    // supplied by mixins
-    public static final Map<String, BlockState> idToblockstate = new HashMap<>();
-    public static final Map<Identifier, List<Identifier>> blockstateToTextures = new HashMap<>();
-    private final Map<Direction, Map<Color, BlockState>> palette = new HashMap<>();
-
-    private static Identifier getTexturePath(Identifier id) {
-        return new Identifier(id.getNamespace(), String.format("textures/%s%s", id.getPath(), ".png"));
+    private static boolean includedBlock(Map.Entry<BlockState, RGBA> entry) {
+        return !EntityBuilder.CONFIG.excludedBlockIDs().contains(Registry.BLOCK.getId(entry.getKey().getBlock()).toString());
     }
 
     /**
-     * finds the best suited color
+     * finds the best suited block state for the given color
      */
-    public BlockState nearestBlock(int intColor, Direction unmappedAxis) {
-        float minDistance = Float.MAX_VALUE;
-        BlockState matching = Registry.BLOCK.get(new Identifier("stone")).getDefaultState();
-        Color color = new Color(intColor, true);
-        for (Color c : palette.get(unmappedAxis).keySet()) {
-            float distance = Math.abs(c.getRed() - color.getRed()) + Math.abs(c.getGreen() - color.getGreen()) + Math.abs(c.getBlue() - color.getBlue()) + Math.abs(c.getAlpha() - color.getAlpha());
-            if (distance < minDistance) {
-                BlockState blockState = palette.get(unmappedAxis).get(c);
-                if (EntityBuilder.CONFIG.excludedBlockIDs().contains(Registry.BLOCK.getId(blockState.getBlock()).toString())) continue;
-                minDistance = distance;
-                matching = blockState;
-            }
-        }
-        return matching;
+    public BlockState bestBlockState(int intColor, Direction unmappedAxis) {
+        var color = new RGBA(intColor);
+        return palette.get(unmappedAxis).entrySet().stream().filter(ColorMatcher::includedBlock).min(Comparator.comparing(e -> e.getValue().distance(color))).orElse(Map.entry(Blocks.STONE.getDefaultState(), RGBA.ZERO)).getKey();
     }
 
     @Override
@@ -68,65 +49,132 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
 
     @Override
     public void reload(ResourceManager manager) {
+        int textures = 0, states = 0;
 
-        var dirs = Arrays.stream(Direction.values()).toList();
-        for (Direction direction : dirs) {
-            palette.put(direction, new HashMap<>());
-        }
-        int counter = 0;
-        for (Identifier stateID : blockstateToTextures.keySet()) {
-            // blockstateToTextures "minecraft:block/fire_up0"
-            Utils.log(ids);
-            // TODO this is assuming the textures for the faces are in the same order
-            int dir = 0;
-            for (Iterator<Identifier> iterator = blockstateToTextures.get(stateID).iterator(); iterator.hasNext() && dir < dirs.size(); dir++) {
-                Identifier textureId = iterator.next();
-                float r = 0, g = 0, b = 0, a = 0;
-                try (InputStream inputStream = manager.open(getTexturePath(textureId))) {
-                    BufferedImage image = ImageIO.read(inputStream);
-                    boolean hasAlpha = image.getColorModel().hasAlpha();
-                    float alphaWeight = 1;
-                    for (int y = 0; y < image.getHeight(); y++) {
-                        for (int x = 0; x < image.getWidth(); x++) {
-                            Color color = new Color(image.getRGB(x, y), hasAlpha);
-                            a += color.getAlpha();
-                            if (!image.isAlphaPremultiplied()) {
-                                alphaWeight = color.getAlpha() / 255.0f;
-                            }
-                            r += alphaWeight * color.getRed();
-                            g += alphaWeight * color.getGreen();
-                            b += alphaWeight * color.getBlue();
-                        }
-                    }
-                    // get average
-                    int pixels = image.getHeight() * image.getWidth();
-                    r /= pixels;
-                    g /= pixels;
-                    b /= pixels;
-                    a /= pixels;
-                } catch (FileNotFoundException e) {
-                    LOGGER.warn("Missing texture for " + textureId);
-                    continue;
-                } catch (IOException e) {
-                    LOGGER.error("Couldn't open texture: " + e);
+        final int seed = 42;
+        Random random = Random.create(seed);
+        BlockRenderManager blockRenderManager = MinecraftClient.getInstance().getBlockRenderManager();
+        for (Direction direction : Direction.values()) {
+            HashMap<BlockState, RGBA> colorBlockStateMap = new HashMap<>();
+            palette.put(direction, colorBlockStateMap);
+            for (var state : Block.STATE_IDS) {
+                if (EntityBuilder.CONFIG.skipWaterlogged() && state.contains(Properties.WATERLOGGED) && state.get(Properties.WATERLOGGED)) {
                     continue;
                 }
-                palette.get(dirs.get(dir)).put(new Color((int) r, (int) g, (int) b, (int) a), id(stateID));
+                // BasicBakedModel.quads and faceQuads are both important
+                // 84132 block states used 17826 faceQuads vs 66306 quads
+                // direction null returns quads, anything else faceQuads
+                random.setSeed(seed);
+                List<BakedQuad> sprites = blockRenderManager.getModel(state).getQuads(state, null, random);
+
+                // use quads for all directions if not empty
+                if (sprites.isEmpty()) {
+                    random.setSeed(seed);
+                    sprites = blockRenderManager.getModel(state).getQuads(state, direction, random);
+                }
+
+                // get weighted by area average of all sprites for a block state
+                List<NativeImage> images = sprites.stream().map(bakedQuad -> ((SpriteImageAccesor) bakedQuad.getSprite()).getOriginalImage()).toList();
+                List<Double> weights = sprites.stream().map(bakedQuad -> minimalArea(direction, bakedQuad.getVertexData())).toList();
+
+                // TODO investigate why full blocks have exactly one sprite with zero area
+                if (weights.equals(List.of(0.0))) {
+                    weights = List.of(1.0);
+                }
+                colorBlockStateMap.put(state, weightedAverage(weights, images));
+                textures += images.size();
+                states++;
             }
-            counter++;
         }
-        LOGGER.info("Added " + counter + " block textures.");
+
+        Utils.LOGGER.debug("Rebuilt palette: {}", palette);
+        Utils.LOGGER.info("Added {} textures for {} block states.", textures, states);
     }
 
-    BlockState id(Identifier stateID) {
-        Blocks.FIRE.getDefaultState().with(FireBlock.AGE, 7);
-        Blocks.CARROTS.getDefaultState().with(CarrotsBlock.AGE, 7);
-        String path = stateID.getPath();
-        Identifier a = new Identifier(stateID.getNamespace());
-        while (!Registry.BLOCK.containsId(a) && path.contains("_")) {
-            a = new Identifier(stateID.getNamespace(), path.substring(0, path.lastIndexOf("_")));
+    private RGBA weightedAverage(List<Double> weights, List<NativeImage> images) {
+        var avg = RGBA.ZERO;
+        double totalWeight = weights.stream().mapToDouble(a -> a).sum();
+        for (int i = 0; i < weights.size(); i++) {
+            double weight = weights.get(i);
+            if (weight == 0) continue;
+
+            NativeImage image = images.get(i);
+            var imageSum = RGBA.ZERO;
+            for (int y = 0; y < image.getHeight(); y++) {
+                for (int x = 0; x < image.getWidth(); x++) {
+                    int color = image.getColor(x, y);
+                    // don't count transparent pixels
+                    if (NativeImage.getAlpha(color) == 0) {
+                        continue;
+                    }
+                    imageSum = imageSum.add(NativeImage.getRed(color), NativeImage.getGreen(color), NativeImage.getBlue(color), NativeImage.getAlpha(color));
+                }
+            }
+            int pixels = image.getHeight() * image.getWidth();
+            avg = avg.add(imageSum.multiply(weight / pixels));
+        }
+        return avg.divide(totalWeight);
+    }
+
+    /**
+     * gets the minimal area covered on one site
+     *
+     * @see net.minecraft.client.render.block.BlockModelRenderer#getQuadDimensions(BlockRenderView, BlockState, BlockPos, int[], Direction, float[], BitSet)
+     */
+    private double minimalArea(Direction face, int[] vertexData) {
+        float west = 32.0f;
+        float down = 32.0f;
+        float north = 32.0f;
+        float east = -32.0f;
+        float up = -32.0f;
+        float south = -32.0f;
+        for (int i = 0; i < 4; i++) {
+            float x = Float.intBitsToFloat(vertexData[i * 8]);
+            float y = Float.intBitsToFloat(vertexData[i * 8 + 1]);
+            float z = Float.intBitsToFloat(vertexData[i * 8 + 2]);
+            west = Math.min(west, x);
+            down = Math.min(down, y);
+            north = Math.min(north, z);
+            east = Math.max(east, x);
+            up = Math.max(up, y);
+            south = Math.max(south, z);
+        }
+        return switch (face) {
+            case WEST, EAST -> west - east;
+            case DOWN, UP -> down - up;
+            case NORTH, SOUTH -> north - south;
+        };
+    }
+
+    record RGBA(double r, double g, double b, double a) {
+        public static final RGBA ZERO = new RGBA(0, 0, 0, 0);
+
+        public RGBA(int argb) {
+            this(argb >> 16 & 0xFF, argb >> 8 & 0xFF, argb & 0xFF, argb >> 24 & 0xFF);
         }
 
-        return Registry.BLOCK.get(a).getDefaultState();
+        private static double subAndSquare(double a, double b) {
+            return (a - b) * (a - b);
+        }
+
+        public RGBA add(double a, double b, double c, double d) {
+            return new RGBA(a + this.r, b + this.g, c + this.b, d + this.a);
+        }
+
+        public RGBA add(RGBA other) {
+            return new RGBA(r + other.r, g + other.g, b + other.b, a + other.a);
+        }
+
+        public RGBA multiply(double factor) {
+            return new RGBA(r * factor, g * factor, b * factor, a * factor);
+        }
+
+        public RGBA divide(double factor) {
+            return new RGBA(r / factor, g / factor, b / factor, a / factor);
+        }
+
+        public double distance(RGBA other) {
+            return subAndSquare(r, other.r) + subAndSquare(g, other.g) + subAndSquare(b, other.b) + subAndSquare(a, other.a);
+        }
     }
 }

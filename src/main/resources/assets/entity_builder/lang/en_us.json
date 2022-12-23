@@ -1,13 +1,20 @@
 {
   "text.config.entity_builder.title": [{"text": "Entity Builder Options","color": "#0096FF"}],
-  "text.config.entity_builder.option.setBlockMode": "How to send the changed blocks to the server",
+  "text.config.entity_builder.option.defaultScale": "Default scale for statues",
+  "text.config.entity_builder.option.setBlockMode": "Block placing mode",
   "text.config.entity_builder.option.setBlockMode.value.custompacket": "Send custom packet",
   "text.config.entity_builder.option.setBlockMode.value.custompacket.tooltip": "Requires this mod on the server",
   "text.config.entity_builder.option.setBlockMode.value.worldedit": "Use WorldEdit",
   "text.config.entity_builder.option.setBlockMode.value.worldedit.tooltip": "Can be undone\nRequires this mod and WorldEdit on the server",
-  "text.config.entity_builder.option.defaultScale": "Default scale for statues",
+  "text.config.entity_builder.option.skipWaterlogged": "Skip waterlogged states",
+  "text.config.entity_builder.option.skipWaterlogged.tooltip": "Requires resource pack reload",
   "text.config.entity_builder.option.nonSolidBlocks": "Exclude non solid blocks",
   "text.config.entity_builder.option.creativeBlocks": "Exclude creative blocks",
   "text.config.entity_builder.option.fallingBlocks": "Exclude falling blocks",
-  "text.config.entity_builder.option.excludedBlocks": "Excluded blocks"
+  "text.config.entity_builder.option.excludedBlockIDs": "Excluded blocks",
+  "text.config.entity_builder.section.debug": "For Debugging",
+  "text.config.entity_builder.option.showOrigin": "Show statue origin",
+  "text.config.entity_builder.option.showOrigin.tooltip": "Generates an obsidian block where you stood",
+  "text.config.entity_builder.option.showVertices": "Show vertices",
+  "text.config.entity_builder.option.showVertices.tooltip": "Generates diamond blocks where the entity had vertices"
 }

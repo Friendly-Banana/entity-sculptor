@@ -31,7 +31,6 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 
-import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -52,11 +51,11 @@ public class EntityBuilder implements ModInitializer {
     }
 
     private static void filterBlocks(boolean exclude, Predicate<Block> blockPredicate) {
-        List<String> excludedBlocks = CONFIG.excludedBlockIDs();
+        var excludedBlocks = CONFIG.excludedBlockIDs();
         if (exclude) {
             Registry.BLOCK.getIds().stream().filter(id -> blockPredicate.test(Registry.BLOCK.get(id))).map(Identifier::toString).filter(id -> !excludedBlocks.contains(id)).forEach(excludedBlocks::add);
         } else {
-            Registry.BLOCK.getIds().stream().filter(id -> blockPredicate.test(Registry.BLOCK.get(id))).map(Identifier::toString).forEach(excludedBlocks::remove);
+            excludedBlocks.removeIf(id -> blockPredicate.test(Registry.BLOCK.get(new Identifier(id))));
         }
         CONFIG.excludedBlockIDs(excludedBlocks);
     }
