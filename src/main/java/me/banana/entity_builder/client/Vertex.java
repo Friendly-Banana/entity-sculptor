@@ -4,15 +4,13 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3f;
 
-import java.awt.*;
-
 final class Vertex {
     private Vec3d position;
     private Vec3f normal;
     private float textureU, textureV;
     private int overlayU, overlayV;
     private int lightU, lightV;
-    private Color color;
+    private ColorMatcher.RGBA color;
 
     /**
      * <table>
@@ -28,12 +26,12 @@ final class Vertex {
      */
     public Direction getUnmappedAxis() {
         float x = Math.abs(this.normal.getX()), y = Math.abs(this.normal.getY()), z = Math.abs(this.normal.getZ());
-        if (y > x && y > z) {
-            return this.normal.getY() > 0 ? Direction.UP : Direction.DOWN;
-        } else if (z > x && z > y) {
+        if (z > x && z > y) {
             return this.normal.getZ() > 0 ? Direction.SOUTH : Direction.NORTH;
-        } else if (x > y && x > z) return this.normal.getX() > 0 ? Direction.EAST : Direction.WEST;
-        return Direction.UP;
+        } else if (x > y && x > z) {
+            return this.normal.getX() > 0 ? Direction.EAST : Direction.WEST;
+        }
+        return this.normal.getY() > 0 ? Direction.UP : Direction.DOWN;
     }
 
     public Vec3d getPosition() {
@@ -63,12 +61,12 @@ final class Vertex {
         overlayV = v;
     }
 
-    public Color getColor() {
+    public ColorMatcher.RGBA getColor() {
         return color;
     }
 
     public void setColor(int red, int green, int blue, int alpha) {
-        color = new Color(red, green, blue, alpha);
+        color = new ColorMatcher.RGBA(red, green, blue, alpha);
     }
 
     public void setTexture(float u, float v) {

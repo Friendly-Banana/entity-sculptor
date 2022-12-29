@@ -1,8 +1,12 @@
 package me.banana.entity_builder.client;
 
+import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
+import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import me.banana.entity_builder.EntityBuilder;
-import me.banana.entity_builder.Utils;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -41,39 +45,40 @@ import static me.banana.entity_builder.client.EntityBuilderClient.COLOR_MATCHER;
 import static net.minecraft.server.command.CommandManager.literal;
 
 public class BuildCommand {
+    private static final BlockState ORIGIN_BLOCK = Blocks.OBSIDIAN.getDefaultState();
+    private static final BlockState VERTEX_BLOCK = Blocks.DIAMOND_BLOCK.getDefaultState();
+    private static final SimpleCommandExceptionType modNotOnServer = new SimpleCommandExceptionType(Text.literal("Please install this mod on the server."));
+    private static final DynamicCommandExceptionType missingTexture = new DynamicCommandExceptionType(texture -> Text.literal("Missing texture " + texture));
+    private static final Dynamic2CommandExceptionType fileError = new Dynamic2CommandExceptionType((texture, exception) -> Text.literal("Could not open %s: %s".formatted(texture, exception)));
+
     public static void register() {
-        double scale = EntityBuilder.CONFIG.defaultScale();
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("build").then(CommandManager.argument("entity", EntityArgumentType.entity()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), context.getSource().getPosition(), scale)).then(CommandManager.argument("pos", Vec3ArgumentType.vec3()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), scale)).then(CommandManager.argument("scale", DoubleArgumentType.doubleArg()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), DoubleArgumentType.getDouble(context, "scale"))))))));
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("build").then(CommandManager.argument("entity", EntityArgumentType.entity()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), context.getSource().getPosition(), EntityBuilder.CONFIG.defaultScale())).then(CommandManager.argument("pos", Vec3ArgumentType.vec3()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), EntityBuilder.CONFIG.defaultScale())).then(CommandManager.argument("scale", DoubleArgumentType.doubleArg()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), DoubleArgumentType.getDouble(context, "scale"))))))));
     }
 
-    public static int execute(ServerCommandSource commandSource, Entity entity, Vec3d statueOrigin, double scale) {
+    public static int execute(ServerCommandSource commandSource, Entity entity, Vec3d statueOrigin, double scale) throws CommandSyntaxException {
         /*if (!EntityBuilderClient.installedOnServer) {
-            commandSource.sendFeedback(MutableText.of(new LiteralTextContent("Please install this mod on the server.")), false);
-            return -1;
+            throw modNotOnServer.create();
         }*/
+
+        Map<Vec3d, BlockState> statue = new HashMap<>();
+        commandSource.sendFeedback(MutableText.of(new LiteralTextContent("Building ")).append(entity.getDisplayName()).append("..."), false);
 
         EntityRenderer<? super Entity> renderer = MinecraftClient.getInstance().getEntityRenderDispatcher().getRenderer(entity);
         if (renderer == null) {
-            commandSource.sendFeedback(Text.literal("Renderer is null."), false);
-            return -1;
+            throw new SimpleCommandExceptionType(Text.literal("Renderer is null.")).create();
         }
 
-        commandSource.sendFeedback(MutableText.of(new LiteralTextContent("Building ")).append(entity.getDisplayName()).append("..."), false);
         var vc = new CollectingVertexConsumerProvider();
         renderer.render(entity, entity.prevYaw, 0, new MatrixStack(), vc, LightmapTextureManager.MAX_LIGHT_COORDINATE);
-
-        // convert vertices into statue
-        Map<Vec3d, BlockState> statue = new HashMap<>();
         List<Vertex> vertices = vc.allVertices().toList();
 
         ResourceManager resourceManager = MinecraftClient.getInstance().getResourceManager();
         try (InputStream inputStream = resourceManager.getResourceOrThrow(renderer.getTexture(entity)).getInputStream()) {
             BufferedImage image = ImageIO.read(inputStream);
             for (int i = 0; i < vertices.size(); i += 4) {
-                Vertex[] ver = new Vertex[]{vertices.get(i), vertices.get(i + 1), vertices.get(i + 2), vertices.get(i + 3)};
                 // get opposite edges
-                Vertex minUV = ver[1];
-                Vertex maxUV = ver[3];
+                Vertex minUV = vertices.get(i + 1);
+                Vertex maxUV = vertices.get(i + 3);
 
                 Direction unmappedAxis = minUV.getUnmappedAxis();
                 int u1 = Math.round(minUV.getTextureU() * image.getWidth()), v1 = Math.round(minUV.getTextureV() * image.getHeight());
@@ -82,18 +87,21 @@ public class BuildCommand {
                 // scale so one block equals one pixel
                 int uDiff = u2 - u1;
                 double xDiff = switch (unmappedAxis) {
-                    case EAST, WEST -> maxUV.getPosition().z - minUV.getPosition().z;
+                    case DOWN, UP -> maxUV.getPosition().y - minUV.getPosition().y;
+                    case NORTH, SOUTH -> maxUV.getPosition().z - minUV.getPosition().z;
                     default -> maxUV.getPosition().x - minUV.getPosition().x;
                 };
                 double uvScale = Math.round(Math.abs(uDiff / xDiff));
-                if (uvScale == 0) {
-                    continue;
-                }
                 minUV.setPosition(minUV.getPosition().multiply(uvScale * scale));
                 maxUV.setPosition(maxUV.getPosition().multiply(uvScale * scale));
-
                 for (int u = u1; u <= u2; u++) {
                     for (int v = v1; v <= v2; v++) {
+                        ColorMatcher.RGBA color = new ColorMatcher.RGBA(image.getRGB(u % image.getWidth(), v % image.getHeight()));
+                        // skip transparent pixels
+                        if (color.a() == 0) continue;
+                        // add potential tint
+                        color = color.tint(minUV.getColor());
+
                         double x, y, z;
                         switch (unmappedAxis) {
                             case DOWN, UP -> {
@@ -112,22 +120,21 @@ public class BuildCommand {
                                 x = clampedLerpFromProgress(u + v, u1 + v1, u2 + v2, minUV.getPosition().x, maxUV.getPosition().x);
                             }
                         }
-                        statue.put(new Vec3d(x, y, z), COLOR_MATCHER.bestBlockState(image.getRGB(u % image.getWidth(), v % image.getHeight()), unmappedAxis));
+                        statue.put(new Vec3d(x, y, z), COLOR_MATCHER.bestBlockState(color, unmappedAxis));
                     }
                 }
             }
         } catch (FileNotFoundException e) {
-            Utils.LOGGER.warn("Missing texture for " + renderer.getTexture(entity));
-            return -1;
-        } catch (IOException e) {
-            e.printStackTrace();
+            throw missingTexture.create(renderer.getTexture(entity));
+        } catch (IOException exception) {
+            throw fileError.create(renderer.getTexture(entity), exception);
+        }
+        if (EntityBuilder.CONFIG.showVertices()) {
+            vertices.forEach(v -> statue.put(v.getPosition().multiply(scale), VERTEX_BLOCK));
         }
 
         if (EntityBuilder.CONFIG.showOrigin()) {
-            statue.put(statueOrigin, Blocks.OBSIDIAN.getDefaultState());
-        }
-        if (EntityBuilder.CONFIG.showVertices()) {
-            vertices.forEach(v -> statue.put(v.getPosition().multiply(scale), Blocks.DIAMOND_BLOCK.getDefaultState()));
+            statue.put(statueOrigin, ORIGIN_BLOCK);
         }
 
         // place statue
@@ -139,7 +146,7 @@ public class BuildCommand {
         }
 
         commandSource.sendFeedback(MutableText.of(new LiteralTextContent("Sent " + statue.size() + " blocks to server")), false);
-        return 1;
+        return Command.SINGLE_SUCCESS;
     }
 
     private static double clampedLerpFromProgress(int progress, int progressStart, int progressEnd, double lerpStart, double lerpEnd) {

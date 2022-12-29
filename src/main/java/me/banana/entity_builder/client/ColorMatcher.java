@@ -32,8 +32,7 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
     /**
      * finds the best suited block state for the given color
      */
-    public BlockState bestBlockState(int intColor, Direction unmappedAxis) {
-        var color = new RGBA(intColor);
+    public BlockState bestBlockState(RGBA color, Direction unmappedAxis) {
         return palette.get(unmappedAxis).entrySet().stream().filter(ColorMatcher::includedBlock).min(Comparator.comparing(e -> e.getValue().distance(color))).orElse(Map.entry(Blocks.STONE.getDefaultState(), RGBA.ZERO)).getKey();
     }
 
@@ -175,6 +174,10 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
 
         public double distance(RGBA other) {
             return subAndSquare(r, other.r) + subAndSquare(g, other.g) + subAndSquare(b, other.b) + subAndSquare(a, other.a);
+        }
+
+        public RGBA tint(RGBA color) {
+            return new RGBA(r * color.r, g * color.g, b * color.b, a * color.a);
         }
     }
 }
