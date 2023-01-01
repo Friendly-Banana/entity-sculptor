@@ -1,5 +1,7 @@
-package me.banana.entity_builder.client;
+package me.banana.entity_sculptor.client;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -8,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
+@Environment(EnvType.CLIENT)
 public class CollectingVertexConsumerProvider implements VertexConsumerProvider {
     private final Map<RenderLayer, CollectingVertexConsumer> perLayer = new HashMap<>();
 

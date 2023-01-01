@@ -1,4 +1,4 @@
-package me.banana.entity_builder;
+package me.banana.entity_sculptor;
 
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.LocalSession;
@@ -30,7 +30,7 @@ import net.minecraft.util.registry.Registry;
 
 import java.util.Map;
 
-public class EntityBuilder implements ModInitializer {
+public class EntitySculptor implements ModInitializer {
     public final static EntityType<MovingBlockEntity> MOVING_BLOCK = FabricEntityTypeBuilder.createMob().defaultAttributes(MobEntity::createMobAttributes).entityFactory(MovingBlockEntity::new).dimensions(EntityDimensions.fixed(1f, 1f)).build();
     public static final Identifier BUILD_CHANGES = Utils.Id("build_changes");
     public static final Identifier MOD_INSTALLED = Utils.Id("mod_installed");
@@ -74,7 +74,7 @@ public class EntityBuilder implements ModInitializer {
     @Override
     public void onInitialize() {
         Registry.register(Registry.ENTITY_TYPE, Utils.Id("moving_block"), MOVING_BLOCK);
-        ServerPlayNetworking.registerGlobalReceiver(BUILD_CHANGES, EntityBuilder::receiveStatueToBuild);
+        ServerPlayNetworking.registerGlobalReceiver(BUILD_CHANGES, EntitySculptor::receiveStatueToBuild);
         ServerPlayConnectionEvents.JOIN.register((networkHandler, sender, server) -> sender.sendPacket(MOD_INSTALLED, PacketByteBufs.empty()));
     }
 }

@@ -1,4 +1,4 @@
-package me.banana.entity_builder;
+package me.banana.entity_sculptor;
 
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.mob.MobEntity;

@@ -1,8 +1,10 @@
-package me.banana.entity_builder.client;
+package me.banana.entity_sculptor.client;
 
 import io.wispforest.owo.config.annotation.*;
-import me.banana.entity_builder.SetBlockMode;
-import me.banana.entity_builder.Utils;
+import me.banana.entity_sculptor.SetBlockMode;
+import me.banana.entity_sculptor.Utils;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.tag.BlockTags;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.InvalidIdentifierException;
@@ -15,9 +17,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Environment(EnvType.CLIENT)
 @Modmenu(modId = Utils.MOD_ID)
-@Config(name = Utils.MOD_ID, wrapperName = "EBConfig")
-public class EBConfigModel {
+@Config(name = Utils.MOD_ID, wrapperName = "ESConfig")
+public class ESConfigModel {
     public static Set<Identifier> blockTags = new HashSet<>();
 
     public double defaultScale = 16;

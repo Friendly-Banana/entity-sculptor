@@ -1,9 +1,12 @@
-package me.banana.entity_builder.client;
+package me.banana.entity_sculptor.client;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3f;
 
+@Environment(EnvType.CLIENT)
 final class Vertex {
     private Vec3d position;
     private Vec3f normal;

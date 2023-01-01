@@ -1,6 +1,6 @@
-package me.banana.entity_builder.client;
+package me.banana.entity_sculptor.client;
 
-import me.banana.entity_builder.MovingBlockEntity;
+import me.banana.entity_sculptor.MovingBlockEntity;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.model.*;

@@ -1,11 +1,13 @@
-package me.banana.entity_builder.client;
+package me.banana.entity_sculptor.client;
 
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
-import me.banana.entity_builder.EntityBuilder;
+import me.banana.entity_sculptor.EntitySculptor;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -40,9 +42,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static me.banana.entity_builder.client.EntityBuilderClient.COLOR_MATCHER;
+import static me.banana.entity_sculptor.client.EntitySculptorClient.COLOR_MATCHER;
 import static net.minecraft.server.command.CommandManager.literal;
 
+@Environment(EnvType.CLIENT)
 public class BuildCommand {
     private static final BlockState ORIGIN_BLOCK = Blocks.OBSIDIAN.getDefaultState();
     private static final BlockState VERTEX_BLOCK = Blocks.DIAMOND_BLOCK.getDefaultState();
@@ -51,12 +54,12 @@ public class BuildCommand {
     private static final Dynamic2CommandExceptionType fileError = new Dynamic2CommandExceptionType((texture, exception) -> Text.literal("Could not open %s: %s".formatted(texture, exception)));
 
     public static void register() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("build").then(CommandManager.argument("entity", EntityArgumentType.entity()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), context.getSource().getPosition(), EntityBuilderClient.CONFIG.defaultScale())).then(CommandManager.argument("pos", Vec3ArgumentType.vec3()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), EntityBuilderClient.CONFIG.defaultScale())).then(CommandManager.argument("scale", DoubleArgumentType.doubleArg()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), DoubleArgumentType.getDouble(context, "scale"))))))));
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("build").then(CommandManager.argument("entity", EntityArgumentType.entity()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), context.getSource().getPosition(), EntitySculptorClient.CONFIG.defaultScale())).then(CommandManager.argument("pos", Vec3ArgumentType.vec3()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), EntitySculptorClient.CONFIG.defaultScale())).then(CommandManager.argument("scale", DoubleArgumentType.doubleArg()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), DoubleArgumentType.getDouble(context, "scale"))))))));
     }
 
     public static int execute(ServerCommandSource commandSource, Entity entity, Vec3d statueOrigin, double scale) throws CommandSyntaxException {
         /* // TODO get working or wait for Fabric API
-        if (!EntityBuilderClient.installedOnServer) {
+        if (!EntitySculptorClient.installedOnServer) {
             throw modNotOnServer.create();
         }*/
 
@@ -120,20 +123,20 @@ public class BuildCommand {
         } catch (IOException exception) {
             throw fileError.create(renderer.getTexture(entity), exception);
         }
-        if (EntityBuilderClient.CONFIG.showVertices()) {
+        if (EntitySculptorClient.CONFIG.showVertices()) {
             vertices.forEach(v -> statue.put(v.getPosition().multiply(scale), VERTEX_BLOCK));
         }
 
-        if (EntityBuilderClient.CONFIG.showOrigin()) {
+        if (EntitySculptorClient.CONFIG.showOrigin()) {
             statue.put(Vec3d.ZERO, ORIGIN_BLOCK);
         }
 
         // place statue
         PacketByteBuf data = PacketByteBufs.create();
-        data.writeEnumConstant(EntityBuilderClient.CONFIG.setBlockMode());
+        data.writeEnumConstant(EntitySculptorClient.CONFIG.setBlockMode());
         data.writeMap(statue, (buf, vec3d) -> buf.writeBlockPos(new BlockPos(statueOrigin.add(vec3d))), (buf, state) -> buf.writeRegistryValue(Block.STATE_IDS, state));
-        switch (EntityBuilderClient.CONFIG.setBlockMode()) {
-            case CustomPacket, WorldEdit -> ClientPlayNetworking.send(EntityBuilder.BUILD_CHANGES, data);
+        switch (EntitySculptorClient.CONFIG.setBlockMode()) {
+            case CustomPacket, WorldEdit -> ClientPlayNetworking.send(EntitySculptor.BUILD_CHANGES, data);
         }
 
         commandSource.sendFeedback(MutableText.of(new LiteralTextContent("Sent " + statue.size() + " blocks to server")), false);

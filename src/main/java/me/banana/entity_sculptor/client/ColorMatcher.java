@@ -1,6 +1,8 @@
-package me.banana.entity_builder.client;
+package me.banana.entity_sculptor.client;
 
-import me.banana.entity_builder.Utils;
+import me.banana.entity_sculptor.Utils;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.resource.ResourceReloadListenerKeys;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.block.Block;
@@ -21,6 +23,7 @@ import net.minecraft.world.BlockRenderView;
 
 import java.util.*;
 
+@Environment(EnvType.CLIENT)
 public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
     private final Map<Direction, HashMap<BlockState, RGBA>> palette = new TreeMap<>();
     private final BlockState fallbackState = Blocks.STONE.getDefaultState();
@@ -53,7 +56,7 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
             HashMap<BlockState, RGBA> colorBlockStateMap = new HashMap<>();
             palette.put(direction, colorBlockStateMap);
             for (var state : Block.STATE_IDS) {
-                if (EntityBuilderClient.CONFIG.excludedBlockIDs().contains(Registry.BLOCK.getId(state.getBlock()).toString()) || state.streamTags().anyMatch(t -> EntityBuilderClient.CONFIG.excludedBlockTags().contains(t.id().toString())) || EntityBuilderClient.CONFIG.skipWaterlogged() && state.contains(Properties.WATERLOGGED) && state.get(Properties.WATERLOGGED)) {
+                if (EntitySculptorClient.CONFIG.excludedBlockIDs().contains(Registry.BLOCK.getId(state.getBlock()).toString()) || state.streamTags().anyMatch(t -> EntitySculptorClient.CONFIG.excludedBlockTags().contains(t.id().toString())) || EntitySculptorClient.CONFIG.skipWaterlogged() && state.contains(Properties.WATERLOGGED) && state.get(Properties.WATERLOGGED)) {
                     continue;
                 }
                 // BasicBakedModel.quads and faceQuads are both important

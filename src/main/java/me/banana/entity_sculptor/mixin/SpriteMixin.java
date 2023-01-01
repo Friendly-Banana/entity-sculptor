@@ -1,6 +1,6 @@
-package me.banana.entity_builder.mixin;
+package me.banana.entity_sculptor.mixin;
 
-import me.banana.entity_builder.client.SpriteImageAccesor;
+import me.banana.entity_sculptor.client.SpriteImageAccesor;
 import net.minecraft.client.texture.NativeImage;
 import net.minecraft.client.texture.Sprite;
 import org.spongepowered.asm.mixin.Final;

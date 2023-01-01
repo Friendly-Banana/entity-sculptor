@@ -1,4 +1,4 @@
-# Entity Builder
+# Entity Sculptor
 
 Ever wanted to capture the moment your dog sits down and looks at you?
 Now you can. Use this mod and build a statue.

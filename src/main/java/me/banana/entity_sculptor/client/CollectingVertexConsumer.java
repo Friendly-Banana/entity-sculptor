@@ -1,5 +1,7 @@
-package me.banana.entity_builder.client;
+package me.banana.entity_sculptor.client;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.render.FixedColorVertexConsumer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.util.math.Vec3d;
@@ -9,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+@Environment(EnvType.CLIENT)
 class CollectingVertexConsumer extends FixedColorVertexConsumer implements VertexConsumer {
     private final List<Vertex> vertices = new ArrayList<>();
     private Vertex current;

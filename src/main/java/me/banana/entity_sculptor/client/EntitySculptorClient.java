@@ -1,8 +1,10 @@
-package me.banana.entity_builder.client;
+package me.banana.entity_sculptor.client;
 
-import me.banana.entity_builder.EntityBuilder;
-import me.banana.entity_builder.Utils;
+import me.banana.entity_sculptor.EntitySculptor;
+import me.banana.entity_sculptor.Utils;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
@@ -20,23 +22,23 @@ import net.minecraft.util.registry.Registry;
 import java.util.function.Predicate;
 
 
-@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-public class EntityBuilderClient implements ClientModInitializer {
+@Environment(EnvType.CLIENT)
+public class EntitySculptorClient implements ClientModInitializer {
     public static final ColorMatcher COLOR_MATCHER = new ColorMatcher();
     public static final EntityModelLayer MOVING_BLOCK_LAYER = new EntityModelLayer(Utils.Id("moving_block"), "main");
-    public static final me.banana.entity_builder.client.EBConfig CONFIG = me.banana.entity_builder.client.EBConfig.createAndLoad();
+    public static final me.banana.entity_sculptor.client.ESConfig CONFIG = me.banana.entity_sculptor.client.ESConfig.createAndLoad();
     public static final Predicate<Block> SOLID_BLOCK = block -> block.getDefaultState().getMaterial().isSolid();
     public static final Predicate<Block> FALLING_BLOCK = block -> block instanceof FallingBlock;
     public static final Predicate<Block> CREATIVE_BLOCK = block -> block.getHardness() == -1.0f || block instanceof InfestedBlock;
     public static boolean installedOnServer = false;
 
     static {
-        EntityBuilderClient.CONFIG.subscribeToCreativeBlocks(exclude -> EntityBuilderClient.filterBlocks(exclude, EntityBuilderClient.CREATIVE_BLOCK));
-        EntityBuilderClient.CONFIG.subscribeToFallingBlocks(exclude -> EntityBuilderClient.filterBlocks(exclude, EntityBuilderClient.FALLING_BLOCK));
-        EntityBuilderClient.CONFIG.subscribeToNonSolidBlocks(exclude -> EntityBuilderClient.filterBlocks(exclude, EntityBuilderClient.SOLID_BLOCK.negate()));
+        EntitySculptorClient.CONFIG.subscribeToCreativeBlocks(exclude -> EntitySculptorClient.filterBlocks(exclude, EntitySculptorClient.CREATIVE_BLOCK));
+        EntitySculptorClient.CONFIG.subscribeToFallingBlocks(exclude -> EntitySculptorClient.filterBlocks(exclude, EntitySculptorClient.FALLING_BLOCK));
+        EntitySculptorClient.CONFIG.subscribeToNonSolidBlocks(exclude -> EntitySculptorClient.filterBlocks(exclude, EntitySculptorClient.SOLID_BLOCK.negate()));
 
-        EntityBuilderClient.CONFIG.subscribeToExcludedBlockIDs(i -> MinecraftClient.getInstance().reloadResources());
-        EntityBuilderClient.CONFIG.subscribeToExcludedBlockTags(i -> MinecraftClient.getInstance().reloadResources());
+        EntitySculptorClient.CONFIG.subscribeToExcludedBlockIDs(i -> MinecraftClient.getInstance().reloadResources());
+        EntitySculptorClient.CONFIG.subscribeToExcludedBlockTags(i -> MinecraftClient.getInstance().reloadResources());
     }
 
     public static void filterBlocks(boolean exclude, Predicate<Block> blockPredicate) {
@@ -51,7 +53,7 @@ public class EntityBuilderClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        ClientPlayNetworking.registerGlobalReceiver(EntityBuilder.MOD_INSTALLED, (client, handler, buf, responseSender) -> installedOnServer = true);
+        ClientPlayNetworking.registerGlobalReceiver(EntitySculptor.MOD_INSTALLED, (client, handler, buf, responseSender) -> installedOnServer = true);
         ClientPlayConnectionEvents.JOIN.register((networkHandler, sender, client) -> installedOnServer = false);
 
         BuildCommand.register();
@@ -59,6 +61,6 @@ public class EntityBuilderClient implements ClientModInitializer {
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(COLOR_MATCHER);
 
         EntityModelLayerRegistry.registerModelLayer(MOVING_BLOCK_LAYER, MovingBlockModel::getTexturedModelData);
-        EntityRendererRegistry.register(EntityBuilder.MOVING_BLOCK, MovingBlockRenderer::new);
+        EntityRendererRegistry.register(EntitySculptor.MOVING_BLOCK, MovingBlockRenderer::new);
     }
 }

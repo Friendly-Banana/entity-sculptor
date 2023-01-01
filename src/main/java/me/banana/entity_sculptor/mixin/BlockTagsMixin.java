@@ -1,6 +1,6 @@
-package me.banana.entity_builder.mixin;
+package me.banana.entity_sculptor.mixin;
 
-import me.banana.entity_builder.client.EBConfigModel;
+import me.banana.entity_sculptor.client.ESConfigModel;
 import net.minecraft.tag.TagKey;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
@@ -14,6 +14,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class BlockTagsMixin {
     @Inject(method = "of", at = @At("HEAD"))
     private static <T> void collectBlockTags(RegistryKey<? extends Registry<T>> registry, Identifier id, CallbackInfoReturnable<TagKey<T>> cir) {
-        if (registry.getRegistry() == Registry.BLOCK_KEY.getRegistry()) EBConfigModel.blockTags.add(id);
+        if (registry.getRegistry() == Registry.BLOCK_KEY.getRegistry()) ESConfigModel.blockTags.add(id);
     }
 }

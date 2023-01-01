@@ -1,4 +1,4 @@
-package me.banana.entity_builder;
+package me.banana.entity_sculptor;
 
 import net.minecraft.util.Identifier;
 import org.apache.logging.log4j.LogManager;
@@ -8,8 +8,8 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 public class Utils {
-    public static final String MOD_ID = "entity_builder";
-    public static final Logger LOGGER = LogManager.getLogger("EntityBuilder");
+    public static final String MOD_ID = "entity_sculptor";
+    public static final Logger LOGGER = LogManager.getLogger("EntitySculptor");
 
     public static void log(Object... objects) {
         LOGGER.info(Arrays.stream(objects).map(Object::toString).collect(Collectors.joining(", ")));

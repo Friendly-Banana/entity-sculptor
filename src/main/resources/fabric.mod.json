@@ -1,21 +1,21 @@
 {
   "schemaVersion": 1,
-  "id": "entity_builder",
+  "id": "entity_sculptor",
   "version": "${mod_version}",
-  "name": "Entity Builder",
-  "description": "Convert entities into statues",
+  "name": "Entity Sculptor",
+  "description": "Turn entities into statues",
   "authors": ["FriendlyBanana"],
   "contact": {},
   "license": "ARR",
-  "icon": "assets/entity_builder/icon.png",
+  "icon": "assets/entity_sculptor/icon.png",
   "environment": "*",
   "entrypoints": {
-    "preLaunch": ["me.banana.entity_builder.PreLaunch"],
-    "main": ["me.banana.entity_builder.EntityBuilder"],
-    "client": ["me.banana.entity_builder.client.EntityBuilderClient"]
+    "preLaunch": ["me.banana.entity_sculptor.PreLaunch"],
+    "main": ["me.banana.entity_sculptor.EntitySculptor"],
+    "client": ["me.banana.entity_sculptor.client.EntitySculptorClient"]
   },
   "mixins": [
-    "entity_builder.mixins.json"
+    "entity_sculptor.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=${loader_version}",
