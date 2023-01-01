@@ -3,9 +3,7 @@
   "minVersion": "0.8",
   "package": "me.banana.entity_builder.mixin",
   "compatibilityLevel": "JAVA_17",
-  "mixins": [
-  ],
-  "client": ["SpriteMixin"],
+  "client": ["BlockTagsMixin","SpriteMixin"],
   "injectors": {
     "defaultRequire": 1
   }

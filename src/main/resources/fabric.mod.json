@@ -4,7 +4,7 @@
   "version": "${mod_version}",
   "name": "Entity Builder",
   "description": "Convert entities into statues",
-  "authors": ["Banana"],
+  "authors": ["FriendlyBanana"],
   "contact": {},
   "license": "ARR",
   "icon": "assets/entity_builder/icon.png",

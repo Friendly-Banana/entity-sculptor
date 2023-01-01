@@ -13,6 +13,7 @@
   "text.config.entity_builder.option.creativeBlocks": "Exclude creative blocks",
   "text.config.entity_builder.option.fallingBlocks": "Exclude falling blocks",
   "text.config.entity_builder.option.excludedBlockIDs": "Excluded blocks",
+  "text.config.entity_builder.option.excludedBlockTags": "Excluded block tags",
   "text.config.entity_builder.section.debug": "Debugging",
   "text.config.entity_builder.option.showOrigin": "Show statue origin",
   "text.config.entity_builder.option.showOrigin.tooltip": "Generates an obsidian block where you stood",

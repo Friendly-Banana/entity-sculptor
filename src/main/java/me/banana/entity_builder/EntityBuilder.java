@@ -7,7 +7,6 @@ import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.fabric.FabricAdapter;
 import com.sk89q.worldedit.session.SessionManager;
-import me.banana.entity_builder.client.EBConfig;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
@@ -17,8 +16,6 @@ import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.FallingBlock;
-import net.minecraft.block.InfestedBlock;
 import net.minecraft.entity.EntityDimensions;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.mob.MobEntity;
@@ -32,33 +29,11 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 
 import java.util.Map;
-import java.util.function.Predicate;
 
 public class EntityBuilder implements ModInitializer {
     public final static EntityType<MovingBlockEntity> MOVING_BLOCK = FabricEntityTypeBuilder.createMob().defaultAttributes(MobEntity::createMobAttributes).entityFactory(MovingBlockEntity::new).dimensions(EntityDimensions.fixed(1f, 1f)).build();
     public static final Identifier BUILD_CHANGES = Utils.Id("build_changes");
     public static final Identifier MOD_INSTALLED = Utils.Id("mod_installed");
-
-    public static final EBConfig CONFIG = EBConfig.createAndLoad();
-    public static final Predicate<Block> SOLID_BLOCK = block -> block.getDefaultState().getMaterial().isSolid();
-    public static final Predicate<Block> FALLING_BLOCK = block -> block instanceof FallingBlock;
-    public static final Predicate<Block> CREATIVE_BLOCK = block -> block.getHardness() == -1.0f || block instanceof InfestedBlock;
-
-    static {
-        CONFIG.subscribeToCreativeBlocks(exclude -> filterBlocks(exclude, CREATIVE_BLOCK));
-        CONFIG.subscribeToFallingBlocks(exclude -> filterBlocks(exclude, FALLING_BLOCK));
-        CONFIG.subscribeToNonSolidBlocks(exclude -> filterBlocks(exclude, SOLID_BLOCK.negate()));
-    }
-
-    private static void filterBlocks(boolean exclude, Predicate<Block> blockPredicate) {
-        var excludedBlocks = CONFIG.excludedBlockIDs();
-        if (exclude) {
-            Registry.BLOCK.getIds().stream().filter(id -> blockPredicate.test(Registry.BLOCK.get(id))).map(Identifier::toString).filter(id -> !excludedBlocks.contains(id)).forEach(excludedBlocks::add);
-        } else {
-            excludedBlocks.removeIf(id -> blockPredicate.test(Registry.BLOCK.get(new Identifier(id))));
-        }
-        CONFIG.excludedBlockIDs(excludedBlocks);
-    }
 
     private static void receiveStatueToBuild(MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler, PacketByteBuf buf, PacketSender responseSender) {
         SetBlockMode setBlockMode = buf.readEnumConstant(SetBlockMode.class);
@@ -72,29 +47,25 @@ public class EntityBuilder implements ModInitializer {
                 SessionManager manager = WorldEdit.getInstance().getSessionManager();
                 LocalSession localSession = manager.get(actor);
 
-                EditSession editSession = localSession.createEditSession(actor);
-                if (localSession.getBlockChangeLimit() > -1 && statue.size() > localSession.getBlockChangeLimit()) {
-                    player.sendMessage(Text.of("Change blockChangeLimit, statue has " + statue.size() + " blocks."));
-                    editSession.close();
-                    return;
-                }
-                for (BlockPos blockPos : statue.keySet()) {
-                    try {
-                        if (editSession.setBlock(FabricAdapter.adapt(blockPos), FabricAdapter.adapt(statue.get(blockPos)))) {
+                try (EditSession editSession = localSession.createEditSession(actor)) {
+                    if (localSession.getBlockChangeLimit() > -1 && statue.size() > editSession.getBlockChangeLimit()) {
+                        player.sendMessage(Text.of("Change blockChangeLimit, statue has " + statue.size() + " blocks."));
+                        return;
+                    }
+                    for (var entry : statue.entrySet()) {
+                        if (editSession.setBlock(FabricAdapter.adapt(entry.getKey()), FabricAdapter.adapt(entry.getValue()))) {
                             changedBlockCount++;
                         }
-                    } catch (MaxChangedBlocksException e) {
-                        player.sendMessage(Text.of("MaxChangedBlocksException: " + e.getMessage()));
-                        break;
                     }
+                    localSession.remember(editSession);
+                } catch (MaxChangedBlocksException e) {
+                    player.sendMessage(Text.of(e.toString()));
                 }
-                editSession.close();
             } else {
                 for (BlockPos blockPos : statue.keySet()) {
                     player.getWorld().setBlockState(blockPos, statue.get(blockPos));
                     changedBlockCount++;
                 }
-                player.sendMessage(Text.of(statue.keySet().toArray()[0].toString()));
             }
             player.sendMessage(Text.of("Built statue, changed " + changedBlockCount + " blocks."));
         });

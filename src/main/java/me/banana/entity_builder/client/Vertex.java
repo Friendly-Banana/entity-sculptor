@@ -25,13 +25,13 @@ final class Vertex {
      * z y	right   1 0 0
      */
     public Direction getUnmappedAxis() {
-        float x = Math.abs(this.normal.getX()), y = Math.abs(this.normal.getY()), z = Math.abs(this.normal.getZ());
+        float x = Math.abs(normal.getX()), y = Math.abs(normal.getY()), z = Math.abs(normal.getZ());
         if (z > x && z > y) {
-            return this.normal.getZ() > 0 ? Direction.SOUTH : Direction.NORTH;
+            return normal.getZ() > 0 ? Direction.SOUTH : Direction.NORTH;
         } else if (x > y && x > z) {
-            return this.normal.getX() > 0 ? Direction.EAST : Direction.WEST;
+            return normal.getX() > 0 ? Direction.EAST : Direction.WEST;
         }
-        return this.normal.getY() > 0 ? Direction.UP : Direction.DOWN;
+        return normal.getY() > 0 ? Direction.UP : Direction.DOWN;
     }
 
     public Vec3d getPosition() {

@@ -1,6 +1,5 @@
 package me.banana.entity_builder.client;
 
-import me.banana.entity_builder.EntityBuilder;
 import me.banana.entity_builder.Utils;
 import net.fabricmc.fabric.api.resource.ResourceReloadListenerKeys;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
@@ -23,17 +22,14 @@ import net.minecraft.world.BlockRenderView;
 import java.util.*;
 
 public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
-    private final Map<Direction, HashMap<BlockState, RGBA>> palette = new HashMap<>();
-
-    private static boolean includedBlock(Map.Entry<BlockState, RGBA> entry) {
-        return !EntityBuilder.CONFIG.excludedBlockIDs().contains(Registry.BLOCK.getId(entry.getKey().getBlock()).toString());
-    }
+    private final Map<Direction, HashMap<BlockState, RGBA>> palette = new TreeMap<>();
+    private final BlockState fallbackState = Blocks.STONE.getDefaultState();
 
     /**
      * finds the best suited block state for the given color
      */
     public BlockState bestBlockState(RGBA color, Direction unmappedAxis) {
-        return palette.get(unmappedAxis).entrySet().stream().filter(ColorMatcher::includedBlock).min(Comparator.comparing(e -> e.getValue().distance(color))).orElse(Map.entry(Blocks.STONE.getDefaultState(), RGBA.ZERO)).getKey();
+        return palette.get(unmappedAxis).entrySet().stream().min(Comparator.comparing(e -> e.getValue().distance(color))).orElse(Map.entry(fallbackState, RGBA.ZERO)).getKey();
     }
 
     @Override
@@ -57,7 +53,7 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
             HashMap<BlockState, RGBA> colorBlockStateMap = new HashMap<>();
             palette.put(direction, colorBlockStateMap);
             for (var state : Block.STATE_IDS) {
-                if (EntityBuilder.CONFIG.skipWaterlogged() && state.contains(Properties.WATERLOGGED) && state.get(Properties.WATERLOGGED)) {
+                if (EntityBuilderClient.CONFIG.excludedBlockIDs().contains(Registry.BLOCK.getId(state.getBlock()).toString()) || state.streamTags().anyMatch(t -> EntityBuilderClient.CONFIG.excludedBlockTags().contains(t.id().toString())) || EntityBuilderClient.CONFIG.skipWaterlogged() && state.contains(Properties.WATERLOGGED) && state.get(Properties.WATERLOGGED)) {
                     continue;
                 }
                 // BasicBakedModel.quads and faceQuads are both important
@@ -177,7 +173,7 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
         }
 
         public RGBA tint(RGBA color) {
-            return new RGBA(r * color.r, g * color.g, b * color.b, a * color.a);
+            return new RGBA(r * color.r / 255, g * color.g / 255, b * color.b / 255, a * color.a / 255);
         }
     }
 }

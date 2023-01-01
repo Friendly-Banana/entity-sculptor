@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 class CollectingVertexConsumer extends FixedColorVertexConsumer implements VertexConsumer {
     private final List<Vertex> vertices = new ArrayList<>();
-    private Vertex current = new Vertex();
+    private Vertex current;
 
     public Stream<Vertex> getVertices() {
         return vertices.stream();
@@ -19,6 +19,7 @@ class CollectingVertexConsumer extends FixedColorVertexConsumer implements Verte
 
     @Override
     public VertexConsumer vertex(double x, double y, double z) {
+        current = new Vertex();
         current.setPosition(new Vec3d(x, y, z));
         return this;
     }
@@ -56,6 +57,6 @@ class CollectingVertexConsumer extends FixedColorVertexConsumer implements Verte
     @Override
     public void next() {
         vertices.add(current);
-        current = new Vertex();
+        current = null;
     }
 }

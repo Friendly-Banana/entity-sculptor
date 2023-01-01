@@ -1,6 +1,5 @@
 package me.banana.entity_builder.client;
 
-import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
@@ -52,11 +51,12 @@ public class BuildCommand {
     private static final Dynamic2CommandExceptionType fileError = new Dynamic2CommandExceptionType((texture, exception) -> Text.literal("Could not open %s: %s".formatted(texture, exception)));
 
     public static void register() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("build").then(CommandManager.argument("entity", EntityArgumentType.entity()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), context.getSource().getPosition(), EntityBuilder.CONFIG.defaultScale())).then(CommandManager.argument("pos", Vec3ArgumentType.vec3()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), EntityBuilder.CONFIG.defaultScale())).then(CommandManager.argument("scale", DoubleArgumentType.doubleArg()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), DoubleArgumentType.getDouble(context, "scale"))))))));
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("build").then(CommandManager.argument("entity", EntityArgumentType.entity()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), context.getSource().getPosition(), EntityBuilderClient.CONFIG.defaultScale())).then(CommandManager.argument("pos", Vec3ArgumentType.vec3()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), EntityBuilderClient.CONFIG.defaultScale())).then(CommandManager.argument("scale", DoubleArgumentType.doubleArg()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), DoubleArgumentType.getDouble(context, "scale"))))))));
     }
 
     public static int execute(ServerCommandSource commandSource, Entity entity, Vec3d statueOrigin, double scale) throws CommandSyntaxException {
-        /*if (!EntityBuilderClient.installedOnServer) {
+        /* // TODO get working or wait for Fabric API
+        if (!EntityBuilderClient.installedOnServer) {
             throw modNotOnServer.create();
         }*/
 
@@ -81,19 +81,10 @@ public class BuildCommand {
                 Vertex maxUV = vertices.get(i + 3);
 
                 Direction unmappedAxis = minUV.getUnmappedAxis();
-                int u1 = Math.round(minUV.getTextureU() * image.getWidth()), v1 = Math.round(minUV.getTextureV() * image.getHeight());
-                int u2 = Math.round(maxUV.getTextureU() * image.getWidth()), v2 = Math.round(maxUV.getTextureV() * image.getHeight());
+                // TODO adjust per-direction to prevent pixel bleeding from opposite face
+                int u1 = Math.round(minUV.getTextureU() * image.getWidth()), v1 = Math.round((unmappedAxis == Direction.DOWN ? maxUV : minUV).getTextureV() * image.getHeight());
+                int u2 = Math.round(maxUV.getTextureU() * image.getWidth()), v2 = Math.round((unmappedAxis == Direction.DOWN ? minUV : maxUV).getTextureV() * image.getHeight());
 
-                // scale so one block equals one pixel
-                int uDiff = u2 - u1;
-                double xDiff = switch (unmappedAxis) {
-                    case DOWN, UP -> maxUV.getPosition().y - minUV.getPosition().y;
-                    case NORTH, SOUTH -> maxUV.getPosition().z - minUV.getPosition().z;
-                    default -> maxUV.getPosition().x - minUV.getPosition().x;
-                };
-                double uvScale = Math.round(Math.abs(uDiff / xDiff));
-                minUV.setPosition(minUV.getPosition().multiply(uvScale * scale));
-                maxUV.setPosition(maxUV.getPosition().multiply(uvScale * scale));
                 for (int u = u1; u <= u2; u++) {
                     for (int v = v1; v <= v2; v++) {
                         ColorMatcher.RGBA color = new ColorMatcher.RGBA(image.getRGB(u % image.getWidth(), v % image.getHeight()));
@@ -120,7 +111,7 @@ public class BuildCommand {
                                 x = clampedLerpFromProgress(u + v, u1 + v1, u2 + v2, minUV.getPosition().x, maxUV.getPosition().x);
                             }
                         }
-                        statue.put(new Vec3d(x, y, z), COLOR_MATCHER.bestBlockState(color, unmappedAxis));
+                        statue.put(new Vec3d(x, y, z).multiply(scale), COLOR_MATCHER.bestBlockState(color, unmappedAxis));
                     }
                 }
             }
@@ -129,24 +120,24 @@ public class BuildCommand {
         } catch (IOException exception) {
             throw fileError.create(renderer.getTexture(entity), exception);
         }
-        if (EntityBuilder.CONFIG.showVertices()) {
+        if (EntityBuilderClient.CONFIG.showVertices()) {
             vertices.forEach(v -> statue.put(v.getPosition().multiply(scale), VERTEX_BLOCK));
         }
 
-        if (EntityBuilder.CONFIG.showOrigin()) {
-            statue.put(statueOrigin, ORIGIN_BLOCK);
+        if (EntityBuilderClient.CONFIG.showOrigin()) {
+            statue.put(Vec3d.ZERO, ORIGIN_BLOCK);
         }
 
         // place statue
         PacketByteBuf data = PacketByteBufs.create();
-        data.writeEnumConstant(EntityBuilder.CONFIG.setBlockMode());
+        data.writeEnumConstant(EntityBuilderClient.CONFIG.setBlockMode());
         data.writeMap(statue, (buf, vec3d) -> buf.writeBlockPos(new BlockPos(statueOrigin.add(vec3d))), (buf, state) -> buf.writeRegistryValue(Block.STATE_IDS, state));
-        switch (EntityBuilder.CONFIG.setBlockMode()) {
+        switch (EntityBuilderClient.CONFIG.setBlockMode()) {
             case CustomPacket, WorldEdit -> ClientPlayNetworking.send(EntityBuilder.BUILD_CHANGES, data);
         }
 
         commandSource.sendFeedback(MutableText.of(new LiteralTextContent("Sent " + statue.size() + " blocks to server")), false);
-        return Command.SINGLE_SUCCESS;
+        return statue.size();
     }
 
     private static double clampedLerpFromProgress(int progress, int progressStart, int progressEnd, double lerpStart, double lerpEnd) {
