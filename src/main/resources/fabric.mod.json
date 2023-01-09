@@ -10,7 +10,6 @@
   "icon": "assets/entity_sculptor/icon.png",
   "environment": "*",
   "entrypoints": {
-    "preLaunch": ["me.banana.entity_sculptor.PreLaunch"],
     "main": ["me.banana.entity_sculptor.EntitySculptor"],
     "client": ["me.banana.entity_sculptor.client.EntitySculptorClient"]
   },

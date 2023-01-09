@@ -5,6 +5,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import com.mojang.brigadier.tree.LiteralCommandNode;
 import me.banana.entity_sculptor.EntitySculptor;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -54,7 +55,16 @@ public class BuildCommand {
     private static final Dynamic2CommandExceptionType fileError = new Dynamic2CommandExceptionType((texture, exception) -> Text.literal("Could not open %s: %s".formatted(texture, exception)));
 
     public static void register() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("build").then(CommandManager.argument("entity", EntityArgumentType.entity()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), context.getSource().getPosition(), EntitySculptorClient.CONFIG.defaultScale())).then(CommandManager.argument("pos", Vec3ArgumentType.vec3()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), EntitySculptorClient.CONFIG.defaultScale())).then(CommandManager.argument("scale", DoubleArgumentType.doubleArg()).executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), DoubleArgumentType.getDouble(context, "scale"))))))));
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            final LiteralCommandNode<ServerCommandSource> statue = dispatcher.register(literal("entitysculptor statue").then(CommandManager.argument("entity", EntityArgumentType.entity())
+                                                                                                                                           .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), context.getSource()
+                                                                                                                                                                                                                                                     .getPosition(), EntitySculptorClient.CONFIG.defaultScale()))
+                                                                                                                                           .then(CommandManager.argument("pos", Vec3ArgumentType.vec3())
+                                                                                                                                                               .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), EntitySculptorClient.CONFIG.defaultScale()))
+                                                                                                                                                               .then(CommandManager.argument("scale", DoubleArgumentType.doubleArg())
+                                                                                                                                                                                   .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), DoubleArgumentType.getDouble(context, "scale")))))));
+            dispatcher.register(literal("statue").redirect(statue));
+        });
     }
 
     public static int execute(ServerCommandSource commandSource, Entity entity, Vec3d statueOrigin, double scale) throws CommandSyntaxException {

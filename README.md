@@ -14,7 +14,7 @@ No matter where you take your dog, the blocks stay where they are.
 
 `/build <entity> [position] [scale]`
 
-Example: dog above you
+Example: dog/wolf statue above you
 
 `/build @e[limit=1,type=minecraft:wolf] ~ ~2 ~`
 

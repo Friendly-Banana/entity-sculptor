@@ -1,5 +1,6 @@
 package me.banana.entity_sculptor;
 
+import com.llamalad7.mixinextras.MixinExtrasBootstrap;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.MaxChangedBlocksException;
@@ -73,6 +74,7 @@ public class EntitySculptor implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        MixinExtrasBootstrap.init();
         Registry.register(Registry.ENTITY_TYPE, Utils.Id("moving_block"), MOVING_BLOCK);
         ServerPlayNetworking.registerGlobalReceiver(BUILD_CHANGES, EntitySculptor::receiveStatueToBuild);
         ServerPlayConnectionEvents.JOIN.register((networkHandler, sender, server) -> sender.sendPacket(MOD_INSTALLED, PacketByteBufs.empty()));

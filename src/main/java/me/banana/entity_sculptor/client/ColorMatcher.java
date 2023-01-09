@@ -22,6 +22,7 @@ import net.minecraft.util.registry.Registry;
 import net.minecraft.world.BlockRenderView;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 @Environment(EnvType.CLIENT)
 public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
@@ -32,7 +33,21 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
      * finds the best suited block state for the given color
      */
     public BlockState bestBlockState(RGBA color, Direction unmappedAxis) {
-        return palette.get(unmappedAxis).entrySet().stream().min(Comparator.comparing(e -> e.getValue().distance(color))).orElse(Map.entry(fallbackState, RGBA.ZERO)).getKey();
+        return palette.get(unmappedAxis)
+                      .entrySet()
+                      .stream()
+                      .min(Comparator.comparing(e -> e.getValue().distance(color)))
+                      .orElse(Map.entry(fallbackState, RGBA.ZERO))
+                      .getKey();
+    }
+
+    public Stream<BlockState> bestBlockStates(RGBA color, Direction[] directions, int limit) {
+        return Arrays.stream(directions)
+                     .map(palette::get)
+                     .flatMap(map -> map.entrySet().stream())
+                     .sorted(Comparator.comparing(e -> e.getValue().distance(color)))
+                     .limit(limit)
+                     .map(Map.Entry::getKey);
     }
 
     @Override
@@ -56,7 +71,12 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
             HashMap<BlockState, RGBA> colorBlockStateMap = new HashMap<>();
             palette.put(direction, colorBlockStateMap);
             for (var state : Block.STATE_IDS) {
-                if (EntitySculptorClient.CONFIG.excludedBlockIDs().contains(Registry.BLOCK.getId(state.getBlock()).toString()) || state.streamTags().anyMatch(t -> EntitySculptorClient.CONFIG.excludedBlockTags().contains(t.id().toString())) || EntitySculptorClient.CONFIG.skipWaterlogged() && state.contains(Properties.WATERLOGGED) && state.get(Properties.WATERLOGGED)) {
+                boolean blockExcluded = EntitySculptorClient.CONFIG.excludedBlockIDs()
+                                                                   .contains(Registry.BLOCK.getId(state.getBlock()).toString());
+                boolean tagExcluded = state.streamTags()
+                                           .anyMatch(blockTagKey -> EntitySculptorClient.CONFIG.excludedBlockTags()
+                                                                                               .contains(blockTagKey.id().toString()));
+                if (blockExcluded || tagExcluded || EntitySculptorClient.CONFIG.skipWaterlogged() && state.contains(Properties.WATERLOGGED) && state.get(Properties.WATERLOGGED)) {
                     continue;
                 }
                 // BasicBakedModel.quads and faceQuads are both important
@@ -72,7 +92,9 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
                 }
 
                 // get weighted by area average of all sprites for a block state
-                List<NativeImage> images = sprites.stream().map(bakedQuad -> ((SpriteImageAccesor) bakedQuad.getSprite()).getOriginalImage()).toList();
+                List<NativeImage> images = sprites.stream()
+                                                  .map(bakedQuad -> ((SpriteImageAccesor) bakedQuad.getSprite()).getOriginalImage())
+                                                  .toList();
                 List<Double> weights = sprites.stream().map(bakedQuad -> minimalArea(direction, bakedQuad.getVertexData())).toList();
 
                 // TODO investigate why full blocks have exactly one sprite with zero area
@@ -144,6 +166,9 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
         };
     }
 
+    /**
+     * represents a color using four doubles in range [0-255]
+     */
     record RGBA(double r, double g, double b, double a) {
         public static final RGBA ZERO = new RGBA(0, 0, 0, 0);
 
