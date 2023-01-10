@@ -13,13 +13,13 @@ No matter where you take your dog, the blocks stay where they are.
 
 ## Usage
 
-### Build Command
+### Statue Command
 
-`/build <entity> [position] [scale]`
+`/statue <entity> [position] [scale]`
 
 Example: dog/wolf statue above you
 
-`/build @e[limit=1,type=minecraft:wolf] ~ ~2 ~`
+`/statue @e[limit=1,type=minecraft:wolf] ~ ~2 ~`
 
 ### Match Color Command
 
@@ -30,6 +30,11 @@ Example: best fitting block for yellow (255, 255, 0)
 `/matchcolor 255 255 0 all 1`
 
 ## Images
+
+<table>
+<img alt="an axolotl" src="images/axolotl.png" width="50%"/>
+<img alt="statue of an axolotl" src="images/axolotl_statue.png" width="50%"/>
+</table>
 
 ![living dog looking at you](images/cute_dog.png)
 ![dog statue built out of blocks](images/dog_statue.png)

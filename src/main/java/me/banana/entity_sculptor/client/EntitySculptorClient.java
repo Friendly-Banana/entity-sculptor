@@ -61,7 +61,7 @@ public class EntitySculptorClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(EntitySculptor.MOD_INSTALLED, (client, handler, buf, responseSender) -> installedOnServer = true);
         ClientPlayConnectionEvents.JOIN.register((networkHandler, sender, client) -> installedOnServer = false);
 
-        BuildCommand.register();
+        StatueCommand.register();
         MatchColorCommand.register();
 
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(COLOR_MATCHER);

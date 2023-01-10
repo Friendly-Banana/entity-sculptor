@@ -8,7 +8,9 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.minecraft.command.CommandSource;
 import net.minecraft.util.math.Direction;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -48,14 +50,11 @@ public class DirectionsArgumentType implements ArgumentType<Direction[]> {
         if (arg.equals(ALL)) {
             return DIRECTIONS;
         }
-        var names = arg.split(SEPARATOR);
-        List<Direction> directions = new ArrayList<>();
-        for (String name : names) {
-            if (DIRECTION_BY_NAME.containsKey(name)) {
-                directions.add(DIRECTION_BY_NAME.get(name));
-            }
-        }
-        return directions.toArray(new Direction[0]);
+        return Arrays.stream(arg.split(SEPARATOR))
+            .filter(DIRECTION_BY_NAME::containsKey)
+            .distinct()
+            .map(DIRECTION_BY_NAME::get)
+            .toArray(Direction[]::new);
     }
 
     @Override

@@ -56,7 +56,7 @@ public class MatchColorCommand {
         EntitySculptorClient.COLOR_MATCHER.bestBlockStates(color, directions, limit)
             .map(state -> Text.literal(order.getAndIncrement() + ". ")
                 .append(Text.literal(formatBlockState(state))
-                    .setStyle(Style.EMPTY.withColor(Formatting.BLUE)
+                    .setStyle(Style.EMPTY.withColor(Formatting.AQUA)
                         .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Copy to clipboard")
                             .setStyle(Style.EMPTY.withColor(Formatting.GREEN))))
                         .withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, formatBlockState(state))))))

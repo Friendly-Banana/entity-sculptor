@@ -47,7 +47,7 @@ import static me.banana.entity_sculptor.client.EntitySculptorClient.COLOR_MATCHE
 import static net.minecraft.server.command.CommandManager.literal;
 
 @Environment(EnvType.CLIENT)
-public class BuildCommand {
+public class StatueCommand {
     private static final BlockState ORIGIN_BLOCK = Blocks.OBSIDIAN.getDefaultState();
     private static final BlockState VERTEX_BLOCK = Blocks.DIAMOND_BLOCK.getDefaultState();
     private static final SimpleCommandExceptionType modNotOnServer = new SimpleCommandExceptionType(Text.literal("Please install this mod on the server."));
