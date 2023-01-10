@@ -45,11 +45,11 @@ public class EntitySculptorClient implements ClientModInitializer {
         var excludedBlocks = CONFIG.excludedBlockIDs();
         if (exclude) {
             Registry.BLOCK.getIds()
-                          .stream()
-                          .filter(id -> blockPredicate.test(Registry.BLOCK.get(id)))
-                          .map(Identifier::toString)
-                          .filter(id -> !excludedBlocks.contains(id))
-                          .forEach(excludedBlocks::add);
+                .stream()
+                .filter(id -> blockPredicate.test(Registry.BLOCK.get(id)))
+                .map(Identifier::toString)
+                .filter(id -> !excludedBlocks.contains(id))
+                .forEach(excludedBlocks::add);
         } else {
             excludedBlocks.removeIf(id -> blockPredicate.test(Registry.BLOCK.get(new Identifier(id))));
         }
@@ -62,7 +62,7 @@ public class EntitySculptorClient implements ClientModInitializer {
         ClientPlayConnectionEvents.JOIN.register((networkHandler, sender, client) -> installedOnServer = false);
 
         BuildCommand.register();
-        MatchBlockCommand.register();
+        MatchColorCommand.register();
 
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(COLOR_MATCHER);
 

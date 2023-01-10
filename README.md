@@ -7,16 +7,27 @@ No matter where you take your dog, the blocks stay where they are.
 ## Installation
 
 1. Install Fabric
-2. Put [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api) and this mod in the mods folder (both server and client)
+2. Put [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api)
+   and [this mod](https://www.curseforge.com/minecraft/mc-mods/entity-sculptor) in the mods folder (both server and client)
 3. Optional: Install WorldEdit
 
 ## Usage
+
+### Build Command
 
 `/build <entity> [position] [scale]`
 
 Example: dog/wolf statue above you
 
 `/build @e[limit=1,type=minecraft:wolf] ~ ~2 ~`
+
+### Match Color Command
+
+`/matchcolor r g b [a|directions | limit]`
+
+Example: best fitting block for yellow (255, 255, 0)
+
+`/matchcolor 255 255 0 all 1`
 
 ## Images
 

@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 public class ESConfigModel {
     public static Set<Identifier> blockTags = new HashSet<>();
 
+    @SectionHeader("build")
     public double defaultScale = 16;
     public SetBlockMode setBlockMode = SetBlockMode.CustomPacket;
 
@@ -39,12 +40,17 @@ public class ESConfigModel {
     @Hook
     @PredicateConstraint("validBlockTags")
     public List<String> excludedBlockTags = new ArrayList<>() {{
-        addAll(Stream.of(BlockTags.STAIRS, BlockTags.SLABS, BlockTags.FENCES, BlockTags.FENCE_GATES, BlockTags.BEDS, BlockTags.DOORS, BlockTags.PRESSURE_PLATES).map(tag -> tag.id().toString()).collect(Collectors.toUnmodifiableSet()));
+        addAll(Stream.of(BlockTags.STAIRS, BlockTags.SLABS, BlockTags.FENCES, BlockTags.FENCE_GATES, BlockTags.BEDS, BlockTags.DOORS, BlockTags.PRESSURE_PLATES)
+            .map(tag -> tag.id().toString())
+            .collect(Collectors.toUnmodifiableSet()));
     }};
 
     @SectionHeader("debug")
     public boolean showOrigin;
     public boolean showVertices;
+
+    @SectionHeader("matchColor")
+    public int defaultLimit = 3;
 
     public static boolean validBlockIDs(List<String> ids) {
         try {

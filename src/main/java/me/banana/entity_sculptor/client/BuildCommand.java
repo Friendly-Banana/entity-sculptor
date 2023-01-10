@@ -57,12 +57,12 @@ public class BuildCommand {
     public static void register() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             final LiteralCommandNode<ServerCommandSource> statue = dispatcher.register(literal("entitysculptor statue").then(CommandManager.argument("entity", EntityArgumentType.entity())
-                                                                                                                                           .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), context.getSource()
-                                                                                                                                                                                                                                                     .getPosition(), EntitySculptorClient.CONFIG.defaultScale()))
-                                                                                                                                           .then(CommandManager.argument("pos", Vec3ArgumentType.vec3())
-                                                                                                                                                               .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), EntitySculptorClient.CONFIG.defaultScale()))
-                                                                                                                                                               .then(CommandManager.argument("scale", DoubleArgumentType.doubleArg())
-                                                                                                                                                                                   .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), DoubleArgumentType.getDouble(context, "scale")))))));
+                .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), context.getSource()
+                    .getPosition(), EntitySculptorClient.CONFIG.defaultScale()))
+                .then(CommandManager.argument("pos", Vec3ArgumentType.vec3())
+                    .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), EntitySculptorClient.CONFIG.defaultScale()))
+                    .then(CommandManager.argument("scale", DoubleArgumentType.doubleArg())
+                        .executes(context -> execute(context.getSource(), EntityArgumentType.getEntity(context, "entity"), Vec3ArgumentType.getVec3(context, "pos"), DoubleArgumentType.getDouble(context, "scale")))))));
             dispatcher.register(literal("statue").redirect(statue));
         });
     }
@@ -74,7 +74,9 @@ public class BuildCommand {
         }*/
 
         Map<Vec3d, BlockState> statue = new HashMap<>();
-        commandSource.sendFeedback(MutableText.of(new LiteralTextContent("Building ")).append(entity.getDisplayName()).append("..."), false);
+        commandSource.sendFeedback(MutableText.of(new LiteralTextContent("Building "))
+            .append(entity.getDisplayName())
+            .append("..."), false);
 
         EntityRenderer<? super Entity> renderer = MinecraftClient.getInstance().getEntityRenderDispatcher().getRenderer(entity);
         if (renderer == null) {

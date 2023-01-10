@@ -33,21 +33,20 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
      * finds the best suited block state for the given color
      */
     public BlockState bestBlockState(RGBA color, Direction unmappedAxis) {
-        return palette.get(unmappedAxis)
-                      .entrySet()
-                      .stream()
-                      .min(Comparator.comparing(e -> e.getValue().distance(color)))
-                      .orElse(Map.entry(fallbackState, RGBA.ZERO))
-                      .getKey();
+        return palette.get(unmappedAxis).entrySet().stream()
+            .min(Comparator.comparing(e -> e.getValue().distance(color)))
+            .orElse(Map.entry(fallbackState, RGBA.ZERO))
+            .getKey();
     }
 
     public Stream<BlockState> bestBlockStates(RGBA color, Direction[] directions, int limit) {
-        return Arrays.stream(directions)
-                     .map(palette::get)
-                     .flatMap(map -> map.entrySet().stream())
-                     .sorted(Comparator.comparing(e -> e.getValue().distance(color)))
-                     .limit(limit)
-                     .map(Map.Entry::getKey);
+        // TODO remove states only differing in orientation
+        return Arrays.stream(directions).map(palette::get)
+            .flatMap(map -> map.entrySet().stream())
+            .sorted(Comparator.comparing(e -> e.getValue().distance(color)))
+            .map(Map.Entry::getKey)
+            .distinct()
+            .limit(limit);
     }
 
     @Override
@@ -72,10 +71,9 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
             palette.put(direction, colorBlockStateMap);
             for (var state : Block.STATE_IDS) {
                 boolean blockExcluded = EntitySculptorClient.CONFIG.excludedBlockIDs()
-                                                                   .contains(Registry.BLOCK.getId(state.getBlock()).toString());
+                    .contains(Registry.BLOCK.getId(state.getBlock()).toString());
                 boolean tagExcluded = state.streamTags()
-                                           .anyMatch(blockTagKey -> EntitySculptorClient.CONFIG.excludedBlockTags()
-                                                                                               .contains(blockTagKey.id().toString()));
+                    .anyMatch(blockTagKey -> EntitySculptorClient.CONFIG.excludedBlockTags().contains(blockTagKey.id().toString()));
                 if (blockExcluded || tagExcluded || EntitySculptorClient.CONFIG.skipWaterlogged() && state.contains(Properties.WATERLOGGED) && state.get(Properties.WATERLOGGED)) {
                     continue;
                 }
@@ -93,8 +91,8 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
 
                 // get weighted by area average of all sprites for a block state
                 List<NativeImage> images = sprites.stream()
-                                                  .map(bakedQuad -> ((SpriteImageAccesor) bakedQuad.getSprite()).getOriginalImage())
-                                                  .toList();
+                    .map(bakedQuad -> ((SpriteImageAccesor) bakedQuad.getSprite()).getOriginalImage())
+                    .toList();
                 List<Double> weights = sprites.stream().map(bakedQuad -> minimalArea(direction, bakedQuad.getVertexData())).toList();
 
                 // TODO investigate why full blocks have exactly one sprite with zero area
@@ -138,7 +136,6 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
 
     /**
      * gets the minimal area covered on one site
-     *
      * @see net.minecraft.client.render.block.BlockModelRenderer#getQuadDimensions(BlockRenderView, BlockState, BlockPos, int[], Direction, float[], BitSet)
      */
     private double minimalArea(Direction face, int[] vertexData) {

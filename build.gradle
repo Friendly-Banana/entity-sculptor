@@ -18,8 +18,7 @@ repositories {
     // for more information about repositories.
     maven { url "https://maven.enginehub.org/repo/" }
     maven { url "https://maven.wispforest.io/" }
-    maven { url "https://maven.terraformersmc.com/releases/" }
-    maven { url 'https://jitpack.io/' }
+    mavenCentral()
 }
 
 dependencies {
@@ -34,13 +33,11 @@ dependencies {
     // WorldEdit
     modImplementation "com.sk89q.worldedit:worldedit-core:${project.worldedit_version}"
     modImplementation "com.sk89q.worldedit:worldedit-fabric-mc${project.minecraft_version}:${project.worldedit_version}"
+    // WorldEdit needs log4j
+    implementation 'org.apache.logging.log4j:log4j-core:2.19.0'
 
     // OwoLib
     annotationProcessor(modImplementation("io.wispforest:owo-lib:${project.owo_version}"))
-
-    // MixinExtras
-    include(implementation("com.github.LlamaLad7:MixinExtras:${project.mixinextras_version}"))
-    annotationProcessor("com.github.LlamaLad7:MixinExtras:${project.mixinextras_version}")
 }
 
 processResources {

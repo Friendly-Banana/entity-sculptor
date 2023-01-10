@@ -1,6 +1,5 @@
 package me.banana.entity_sculptor;
 
-import com.llamalad7.mixinextras.MixinExtrasBootstrap;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.MaxChangedBlocksException;
@@ -9,6 +8,7 @@ import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.fabric.FabricAdapter;
 import com.sk89q.worldedit.session.SessionManager;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.ArgumentTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -17,6 +17,7 @@ import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.command.argument.serialize.ConstantArgumentSerializer;
 import net.minecraft.entity.EntityDimensions;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.mob.MobEntity;
@@ -32,7 +33,11 @@ import net.minecraft.util.registry.Registry;
 import java.util.Map;
 
 public class EntitySculptor implements ModInitializer {
-    public final static EntityType<MovingBlockEntity> MOVING_BLOCK = FabricEntityTypeBuilder.createMob().defaultAttributes(MobEntity::createMobAttributes).entityFactory(MovingBlockEntity::new).dimensions(EntityDimensions.fixed(1f, 1f)).build();
+    public final static EntityType<MovingBlockEntity> MOVING_BLOCK = FabricEntityTypeBuilder.createMob()
+        .defaultAttributes(MobEntity::createMobAttributes)
+        .entityFactory(MovingBlockEntity::new)
+        .dimensions(EntityDimensions.fixed(1f, 1f))
+        .build();
     public static final Identifier BUILD_CHANGES = Utils.Id("build_changes");
     public static final Identifier MOD_INSTALLED = Utils.Id("mod_installed");
 
@@ -74,8 +79,10 @@ public class EntitySculptor implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        MixinExtrasBootstrap.init();
         Registry.register(Registry.ENTITY_TYPE, Utils.Id("moving_block"), MOVING_BLOCK);
+
+        ArgumentTypeRegistry.registerArgumentType(Utils.Id(""), DirectionsArgumentType.class, ConstantArgumentSerializer.of(DirectionsArgumentType::directions));
+
         ServerPlayNetworking.registerGlobalReceiver(BUILD_CHANGES, EntitySculptor::receiveStatueToBuild);
         ServerPlayConnectionEvents.JOIN.register((networkHandler, sender, server) -> sender.sendPacket(MOD_INSTALLED, PacketByteBufs.empty()));
     }
