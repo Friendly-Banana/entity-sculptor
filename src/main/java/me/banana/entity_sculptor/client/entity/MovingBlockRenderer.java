@@ -1,7 +1,8 @@
-package me.banana.entity_sculptor.client;
+package me.banana.entity_sculptor.client.entity;
 
 import me.banana.entity_sculptor.MovingBlockEntity;
 import me.banana.entity_sculptor.Utils;
+import me.banana.entity_sculptor.client.EntitySculptorClient;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.entity.EntityRendererFactory.Context;

@@ -7,7 +7,6 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.tag.BlockTags;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.InvalidIdentifierException;
 import net.minecraft.util.registry.Registry;
 
 import java.util.ArrayList;
@@ -53,18 +52,28 @@ public class ESConfigModel {
     public int defaultLimit = 3;
 
     public static boolean validBlockIDs(List<String> ids) {
-        try {
-            return ids.stream().allMatch(id -> Registry.BLOCK.containsId(new Identifier(id)));
-        } catch (InvalidIdentifierException exception) {
-            return false;
+        for (String id : ids) {
+            if (!Identifier.isValid(id)) {
+                Utils.LOGGER.info(id + " is not a valid identifier.");
+                return false;
+            } else if (!Registry.BLOCK.containsId(new Identifier(id))) {
+                Utils.LOGGER.warn(id + " is not a registered block.");
+                return false;
+            }
         }
+        return true;
     }
 
     public static boolean validBlockTags(List<String> tags) {
-        try {
-            return tags.stream().allMatch(tag -> blockTags.contains(new Identifier(tag)));
-        } catch (InvalidIdentifierException exception) {
-            return false;
+        for (String tag : tags) {
+            if (!Identifier.isValid(tag)) {
+                Utils.LOGGER.info(tag + " is not a valid identifier.");
+                return false;
+            } else if (!blockTags.contains(new Identifier(tag))) {
+                Utils.LOGGER.warn(tag + " is not a registered block tag.");
+                return false;
+            }
         }
+        return true;
     }
 }

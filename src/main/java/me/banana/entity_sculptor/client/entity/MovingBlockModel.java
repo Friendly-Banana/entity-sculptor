@@ -1,4 +1,4 @@
-package me.banana.entity_sculptor.client;
+package me.banana.entity_sculptor.client.entity;
 
 import me.banana.entity_sculptor.MovingBlockEntity;
 import net.fabricmc.api.EnvType;

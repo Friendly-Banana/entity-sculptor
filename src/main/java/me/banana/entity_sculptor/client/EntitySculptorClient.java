@@ -2,6 +2,8 @@ package me.banana.entity_sculptor.client;
 
 import me.banana.entity_sculptor.EntitySculptor;
 import me.banana.entity_sculptor.Utils;
+import me.banana.entity_sculptor.client.entity.MovingBlockModel;
+import me.banana.entity_sculptor.client.entity.MovingBlockRenderer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
