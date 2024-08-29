@@ -1,6 +1,6 @@
 package me.banana.entity_sculptor.client;
 
-import me.banana.entity_sculptor.Utils;
+import me.banana.entity_sculptor.EntitySculptor;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.resource.ResourceReloadListenerKeys;
@@ -51,7 +51,7 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
 
     @Override
     public Identifier getFabricId() {
-        return Utils.Id("color_matcher");
+        return EntitySculptor.Id("color_matcher");
     }
 
     @Override
@@ -105,8 +105,8 @@ public class ColorMatcher implements SimpleSynchronousResourceReloadListener {
             }
         }
 
-        Utils.LOGGER.debug("Rebuilt palette: {}", palette);
-        Utils.LOGGER.info("Added {} textures for {} block states.", textures, states);
+        EntitySculptor.LOGGER.debug("Rebuilt palette: {}", palette);
+        EntitySculptor.LOGGER.info("Added {} textures for {} block states.", textures, states);
     }
 
     private RGBA weightedAverage(List<Double> weights, List<NativeImage> images) {

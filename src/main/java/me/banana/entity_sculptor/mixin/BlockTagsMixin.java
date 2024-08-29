@@ -1,6 +1,6 @@
 package me.banana.entity_sculptor.mixin;
 
-import me.banana.entity_sculptor.client.ESConfigModel;
+import me.banana.entity_sculptor.client.config.ESConfigModel;
 import net.minecraft.tag.TagKey;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;

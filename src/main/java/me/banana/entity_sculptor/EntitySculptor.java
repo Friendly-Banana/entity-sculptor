@@ -29,19 +29,47 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class EntitySculptor implements ModInitializer {
+    public static final String MOD_ID = "entity_sculptor";
+    public static final Logger LOGGER = LoggerFactory.getLogger("EntitySculptor");
+    public static final Identifier BUILD_CHANGES = Id("build_changes");
+    public static final Identifier MOD_INSTALLED = Id("mod_installed");
     public final static EntityType<MovingBlockEntity> MOVING_BLOCK = FabricEntityTypeBuilder.createMob()
         .defaultAttributes(MobEntity::createMobAttributes)
         .entityFactory(MovingBlockEntity::new)
         .dimensions(EntityDimensions.fixed(1f, 1f))
         .build();
-    public static final Identifier BUILD_CHANGES = Utils.Id("build_changes");
-    public static final Identifier MOD_INSTALLED = Utils.Id("mod_installed");
+
+    public static void log(Object... objects) {
+        LOGGER.info(Arrays.stream(objects).map(Object::toString).collect(Collectors.joining(", ")));
+    }
+
+    public static Identifier Id(String name) {
+        return new Identifier(MOD_ID, name);
+    }
+
+    @Override
+    public void onInitialize() {
+        Registry.register(Registry.ENTITY_TYPE, Id("moving_block"), MOVING_BLOCK);
+
+        ArgumentTypeRegistry.registerArgumentType(Id("direction"), DirectionsArgumentType.class, ConstantArgumentSerializer.of(DirectionsArgumentType::directions));
+
+        ServerPlayNetworking.registerGlobalReceiver(BUILD_CHANGES, EntitySculptor::receiveStatueToBuild);
+        ServerPlayConnectionEvents.JOIN.register((networkHandler, sender, server) -> sender.sendPacket(MOD_INSTALLED, PacketByteBufs.empty()));
+    }
 
     private static void receiveStatueToBuild(MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler, PacketByteBuf buf, PacketSender responseSender) {
+        if (!player.hasPermissionLevel(server.getOpPermissionLevel())) {
+            player.sendMessage(Text.of("You need to be an operator to build statues."));
+            return;
+        }
         SetBlockMode setBlockMode = buf.readEnumConstant(SetBlockMode.class);
         Map<BlockPos, BlockState> statue = buf.readMap(PacketByteBuf::readBlockPos, buffer -> buffer.readRegistryValue(Block.STATE_IDS));
 
@@ -75,15 +103,5 @@ public class EntitySculptor implements ModInitializer {
             }
             player.sendMessage(Text.of("Built statue, changed " + changedBlockCount + " blocks."));
         });
-    }
-
-    @Override
-    public void onInitialize() {
-        Registry.register(Registry.ENTITY_TYPE, Utils.Id("moving_block"), MOVING_BLOCK);
-
-        ArgumentTypeRegistry.registerArgumentType(Utils.Id(""), DirectionsArgumentType.class, ConstantArgumentSerializer.of(DirectionsArgumentType::directions));
-
-        ServerPlayNetworking.registerGlobalReceiver(BUILD_CHANGES, EntitySculptor::receiveStatueToBuild);
-        ServerPlayConnectionEvents.JOIN.register((networkHandler, sender, server) -> sender.sendPacket(MOD_INSTALLED, PacketByteBufs.empty()));
     }
 }

@@ -1,7 +1,6 @@
 package me.banana.entity_sculptor.client;
 
 import me.banana.entity_sculptor.EntitySculptor;
-import me.banana.entity_sculptor.Utils;
 import me.banana.entity_sculptor.client.entity.MovingBlockModel;
 import me.banana.entity_sculptor.client.entity.MovingBlockRenderer;
 import net.fabricmc.api.ClientModInitializer;
@@ -27,8 +26,8 @@ import java.util.function.Predicate;
 @Environment(EnvType.CLIENT)
 public class EntitySculptorClient implements ClientModInitializer {
     public static final ColorMatcher COLOR_MATCHER = new ColorMatcher();
-    public static final EntityModelLayer MOVING_BLOCK_LAYER = new EntityModelLayer(Utils.Id("moving_block"), "main");
-    public static final me.banana.entity_sculptor.client.ESConfig CONFIG = me.banana.entity_sculptor.client.ESConfig.createAndLoad();
+    public static final EntityModelLayer MOVING_BLOCK_LAYER = new EntityModelLayer(EntitySculptor.Id("moving_block"), "main");
+    public static final me.banana.entity_sculptor.client.config.ESConfig CONFIG = me.banana.entity_sculptor.client.config.ESConfig.createAndLoad();
     public static final Predicate<Block> SOLID_BLOCK = block -> block.getDefaultState().getMaterial().isSolid();
     public static final Predicate<Block> FALLING_BLOCK = block -> block instanceof FallingBlock;
     public static final Predicate<Block> CREATIVE_BLOCK = block -> block.getHardness() == -1.0f || block instanceof InfestedBlock;

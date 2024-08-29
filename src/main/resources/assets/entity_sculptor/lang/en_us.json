@@ -21,5 +21,5 @@
   "text.config.entity_sculptor.option.showVertices": "Show vertices",
   "text.config.entity_sculptor.option.showVertices.tooltip": "Generates diamond blocks where the entity had vertices",
   "text.config.entity_sculptor.section.matchColor": "Match Color Command",
-  "text.config.entity_sculptor.option.defaultLimit": "Default amount of blocks to suggest"
+  "text.config.entity_sculptor.option.amountOfSuggestions": "Default amount of blocks to suggest"
 }

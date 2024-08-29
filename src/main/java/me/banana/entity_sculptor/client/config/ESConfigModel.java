@@ -1,8 +1,8 @@
-package me.banana.entity_sculptor.client;
+package me.banana.entity_sculptor.client.config;
 
 import io.wispforest.owo.config.annotation.*;
+import me.banana.entity_sculptor.EntitySculptor;
 import me.banana.entity_sculptor.SetBlockMode;
-import me.banana.entity_sculptor.Utils;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.tag.BlockTags;
@@ -17,8 +17,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Environment(EnvType.CLIENT)
-@Modmenu(modId = Utils.MOD_ID)
-@Config(name = Utils.MOD_ID, wrapperName = "ESConfig")
+@Modmenu(modId = EntitySculptor.MOD_ID)
+@Config(name = EntitySculptor.MOD_ID, wrapperName = "ESConfig")
 public class ESConfigModel {
     public static Set<Identifier> blockTags = new HashSet<>();
 
@@ -36,6 +36,20 @@ public class ESConfigModel {
     @Hook
     @PredicateConstraint("validBlockIDs")
     public List<String> excludedBlockIDs = new ArrayList<>();
+
+    public static boolean validBlockIDs(List<String> ids) {
+        for (String id : ids) {
+            if (!Identifier.isValid(id)) {
+                EntitySculptor.LOGGER.info("{} is not a valid identifier.", id);
+                return false;
+            } else if (!Registry.BLOCK.containsId(new Identifier(id))) {
+                EntitySculptor.LOGGER.warn("{} is not a registered block.", id);
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Hook
     @PredicateConstraint("validBlockTags")
     public List<String> excludedBlockTags = new ArrayList<>() {{
@@ -44,36 +58,23 @@ public class ESConfigModel {
             .collect(Collectors.toUnmodifiableSet()));
     }};
 
+    public static boolean validBlockTags(List<String> tags) {
+        for (String tag : tags) {
+            if (!Identifier.isValid(tag)) {
+                EntitySculptor.LOGGER.info("{} is not a valid identifier.", tag);
+                return false;
+            } else if (!blockTags.contains(new Identifier(tag))) {
+                EntitySculptor.LOGGER.warn("{} is not a registered block tag.", tag);
+                return false;
+            }
+        }
+        return true;
+    }
+
     @SectionHeader("debug")
     public boolean showOrigin;
     public boolean showVertices;
 
     @SectionHeader("matchColor")
-    public int defaultLimit = 3;
-
-    public static boolean validBlockIDs(List<String> ids) {
-        for (String id : ids) {
-            if (!Identifier.isValid(id)) {
-                Utils.LOGGER.info(id + " is not a valid identifier.");
-                return false;
-            } else if (!Registry.BLOCK.containsId(new Identifier(id))) {
-                Utils.LOGGER.warn(id + " is not a registered block.");
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public static boolean validBlockTags(List<String> tags) {
-        for (String tag : tags) {
-            if (!Identifier.isValid(tag)) {
-                Utils.LOGGER.info(tag + " is not a valid identifier.");
-                return false;
-            } else if (!blockTags.contains(new Identifier(tag))) {
-                Utils.LOGGER.warn(tag + " is not a registered block tag.");
-                return false;
-            }
-        }
-        return true;
-    }
+    public int amountOfSuggestions = 3;
 }
